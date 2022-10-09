@@ -1,0 +1,6 @@
+CFLAGS = -I.
+
+dumptest: dumptest.c
+
+clean:
+	rm -f dumptest
