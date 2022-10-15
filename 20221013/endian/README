@@ -1,0 +1,9 @@
+gcc -o lend -static endian.c 
+./lend 42 f
+./lend f
+mips-linux-gnu-gcc -o bend -static endian.c 
+qemu-mips ./bend 42 f
+qemu-mips ./bend f
+
+gcc -o lend -static fendian.c 
+mips-linux-gnu-gcc -o bend -static fendian.c 
