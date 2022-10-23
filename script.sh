@@ -2,7 +2,7 @@
 
 D=${1:-$(date +%Y%m%d)}
 
-mkdir 20220929 && cd ./20220929
+mkdir $D && cd ./$D
 
 T=$(mktemp)
 
