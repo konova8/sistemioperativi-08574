@@ -8,6 +8,9 @@ La funzione `sumstop` deve mettere il processo chiamante in attesa.
 
 La funzione `sumgo` deve sbloccare tutti i processi messi in attesa con la `sumstop` e restituire la somma algebrica dei valori passati come parametro alla `sumstop` dai processi che sono stati sbloccati (zero se la `sumgo` viene richiamata quando non c'è nessun processo bloccato).
 
+[Pagina della wiki aggiornata](https://so.v2.cs.unibo.it/wiki/index.php/20220906c2)
+
+
 ## Esempio Soluzione Errata 1:
 
 ```
@@ -75,7 +78,9 @@ int sumgo(void):
 	return somma;
 ```
 
-Commento sul perchè è sbagliato: **??? TODO ???**
+Commento sul perchè è sbagliato:
+- La `sumgo` rilascia solo un processo, non tutti
+- `somma = sum` è fuori dalla mutua esclusione, è sbagliato
 
 ## Esempio Soluzione Errata 4:
 
@@ -87,7 +92,7 @@ semaphore s(0);
 void sumstop(int v):
 	mutex.P();
 	processlist.enqueue(v);
-	mutex.P();
+	mutex.V();
 	S.P();
 
 int sumgo(void):
@@ -100,7 +105,11 @@ int sumgo(void):
 	retutn sum;
 ```
 
-Commento sul perchè è sbagliato: **??? TODO ???**
+Commento sul perchè è sbagliato:
+- Non bisogna mettere due `mutex.P()` di fila (possibile errore di scrittura)
+- `S.P()` fuori alla `mutex` di sumstop fa sbloccare il processo sbagliato
+  - **PER RISOLVERE TODO**
+- Nota: la `S.V()`  dentro la mutua esclusione si può fare al contrario della `S.P()`
 
 ## Esempio Soluzione Errata 5:
 
@@ -111,24 +120,25 @@ semaphore mutex(1);
 semaphore blocked(0);
 
 void sumstop(int v):
-  mutex.P();
+	mutex.P();
 	sum+=v;
 	counter++;
 	mutex.V();
 	blocked.P();
 
 int sumgo(void):
-	  mutex.P();
-		intret = sum;
-		sum = 0;
-		for (int i=0; i<counter; i++)
-			blocked.V()
-		counter = 0;
-		mutex.V()
+	mutex.P();
+	intret = sum;
+	sum = 0;
+	for (int i=0; i<counter; i++)
+		blocked.V()
+	counter = 0;
+	mutex.V()
 	return intret
 ```
 
-Commento sul perchè è sbagliato: ...
+Commento sul perchè è sbagliato:
+- **TODO**
 
 ## Esempio Soluzione Errata 6:
 
@@ -153,7 +163,8 @@ int sumgo(void):
 	return value;
 ```
 
-Commento sul perchè è sbagliato: ...
+Commento sul perchè è sbagliato:
+- `ready` e `suspend` sono funzioni del kernel, non vanno usate in un esercizio generico
 
 ## Esempio Soluzione Errata 7:
 
@@ -184,10 +195,12 @@ int sumgo(void):
 	return somma
 ```
 
-Commento sul perchè è sbagliato: ...
+Commento sul perchè è sbagliato:
+- Utilizzo array sbagliato, indici del for sbagliato, non funziona niente
 
-8:
+## Esempio Soluzione Errata 8:
 
+```
 struct blocked {
 	semaphore sem(0);
 	int value = 0;
@@ -197,7 +210,7 @@ semaphore mutex(1);
 list<blocked> procs = new list<blocked>();
 
 void sumstop(int v):
-  mutex.P()
+	mutex.P()
 	blocked bl = new blocked();
 	bl.value = v
 	procs.add(bl)
@@ -205,7 +218,7 @@ void sumstop(int v):
 	mutex.V()
 
 int sumgo(void):
-  mutex.P();
+	mutex.P();
 	int count = 0;
 	foreach proc in procs:
 		count += proc.value
@@ -213,9 +226,16 @@ int sumgo(void):
 		proc.sem.V()
 	mutex.V()
 	return count;
+```
 
-9:
+Commento sul perchè è sbagliato:
+- C'è `s.P()` nella mutua esclusione, quindi deadlock
+- Utilizza una lista di semafori, non obbligatoria
+- Tiene tutti i valori invece della sola somma
 
+## 9:
+
+```
 semaphore s[] new sem(0)
 semaphore s1 new sem(0)
 int tot, waiting = 0;
@@ -235,9 +255,14 @@ int sumgo(void):
 		s[i].V()
 	s1.P() // per aspettare che tutti abbiano fatto la somma
 	return tot
+```
+
+Commento sul perchè è sbagliato:
+- Manca la mutua esclusione
 
 10:
 
+```
 int nw = 0
 int currsum = 0
 semaphore mutex(1)
@@ -263,9 +288,13 @@ int sumgo(void):
 	cursum = 0;
 	wait2go.V();
 	return sum
+```
+
+Commento sul perchè è sbagliato: ...
 
 11:
 
+```
 semaphore mutex(1);
 semaphore semwait(0);
 int sum=0;
@@ -293,9 +322,13 @@ int sumgo(void):
 	sum = 0;
 	mutex.V()
 	return val;
+```
+
+Commento sul perchè è sbagliato: ...
 
 12:
 
+```
 semaphore mutex(0)
 volatile int counter = 0
 
@@ -309,3 +342,40 @@ int sumgo(void):
 		mutex.V()
 	counter = 0;
 	return counter
+```
+
+Commento sul perchè è sbagliato: ...
+
+## 14
+
+```
+semaphore mutex(1)
+int sum = 0;
+queue of semaphore q;
+
+void sumstop(int v):
+	mutex.P()
+	sum += v;
+	s = new semaphore(0);
+	q.enqueue(s)
+	mutex.V()
+	s.P()
+	free(s)
+	if(q.empty())
+		mutex.V()
+	else
+		semaphore s = q.dequeue()
+		s.V()
+
+int sumgo(void):
+	mutex.P()
+	int lsum = sum
+	sum = 0
+	if(q.empty())
+		mutex.V()
+	else
+		semaphore s = q.dequeue()
+		s.V()
+```
+
+Corretto, manca solo la restituzione della somma alla fine di `sumgo` (`return lsum`)
