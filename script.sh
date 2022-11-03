@@ -15,7 +15,9 @@ curl -Ls $URL | grep  href | awk '{ print $2 }' | grep -o '".*"' | tr -d '"' > $
 
 cat $T | while read line; do
 	K=$URL/$line
-	wget -q $K
+	#wget -q $K
+	touch $line
+	curl -Ls $K > $line
 done
 
 #http://soho.cs.unibo.it:8888/20220929/
