@@ -1,0 +1,11 @@
+1. Gestione Processi
+2. Gestione Memroia
+3. Gestione File
+4. Gestione Segnali
+5. IPC (Inter Process Communication)
+6. Attesa Eventi
+7. Gestione File System
+8. Gestione Utenti
+9. Gestione Tempo
+10. Networking
+11. Misc
