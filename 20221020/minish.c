@@ -17,10 +17,11 @@ int main() {
 			case 0:
 				execve(buf, myargv, NULL);
 				exit(0);
-			default:
-				wait(&status);
 			case -1:
 				exit(1);
+			default:
+				wait(&status);
+				break;
 		}
 	}
 }
