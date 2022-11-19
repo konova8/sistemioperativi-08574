@@ -21,6 +21,5 @@ cat $T | while read line; do
 done
 
 rm *.swp
-rm *.out
 #http://soho.cs.unibo.it:8888/20220929/
 # wget -nH -r --cut-dirs=10 --no-parent --reject "index.html*"  http://soho.cs.unibo.it:8888/20220929/
