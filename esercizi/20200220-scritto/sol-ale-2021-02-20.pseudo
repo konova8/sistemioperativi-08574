@@ -1,0 +1,27 @@
+// Es c.1
+monitor delay {
+	int counter;
+	condition c;
+
+	delay() {
+		counter=0;
+	}
+
+	procedure entry bool delay(unsigned int timeout) {
+		counter++;
+		while(timeout==0) {
+			timeout--;
+			c.wait();
+			c.signal();	//passing the baton
+		}
+		counter--;
+	}
+
+	procedure entry int count() {
+		return counter;
+	}
+
+	procedure entry void tick() {
+		c.signal();
+	}
+}
