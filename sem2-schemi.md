@@ -1,4 +1,4 @@
-# Sistema Operativo
+# Introduzione ai Sistemi Operativi
 
 Un **Sistema operativo** è livello di astrazione:
 - Realizza il concetto di processo
@@ -141,3 +141,143 @@ I sistemi real-time si dividono in:
 
 NB: real-time non significa necessariamente esecuzione veloce
 
+# Modulo HW: richiami architetturali
+## Architettura di Von Neumann
+![Architettura di Von Neumann](img-schemi/architetturaVonNeumann.png)
+
+- Device -> Fatto di ferro
+- Device Controller -> Hardware (silicio)
+- Device Driver -> Software
+
+- Memory Managment Unit -> Silicio
+- Memory Manager -> Software
+
+## Interrupt
+Un meccanismo che permette l'interruzione del normale ciclo di esecuzione della CPU
+- Permettono al SO di "intervenire" durante l'esecuzione di un programma
+- Sia hardware che software
+- Ci sono $n$ bit, uno per "filo" di interrupt, serve per non fare interrompere l'esecuzione alla CPU.
+	- Questi bit sono nei registri della CPU 
+
+### Trap
+- **Interrupt Hardware**
+	- Sono *asincroni*, come dispositivi di I/O, interval timer
+	- Generati dai contoller stessi
+- **Interrupt Software (Trap)**
+	- Causato dal programma, come divisione per 0, system call
+
+Gli interrupt sono segnali inviati **AL** processore
+
+### Gestione Interrupt
+- Segnale *interrupt request* spedito al processore
+- Il processore salta alla routine di gestione dell'interrupt (**interrupt handler**)
+- L'interrupt handler gestisce l'interrupt e ritorna il controllo al processo interrotto
+- Il processore torna ad eseguire il processo interrotto
+
+#### Esempio dettagliato
+1. Un segnale di *interrupt request* viene spedito alla CPU
+2. La CPU finisce l'esecuzione dell'istante corrente
+3. La CPU verifica la presenza di un segnale di interrupt
+4. Preparazione al trasferimento di controllo dal programma all'interrupt handler
+	- Metodo 1: Salvataggio dei registri "critici"
+	- Metodo 2: Scambio di stato
+5. Selezione dell'interrupt handler appropiato
+6. Caricamento del PC con l'indirizzo iniziale dell'interrupt handler assegnato
+	- Nota: Tutte e operazioni fino ad ora sono **hardware**
+7. Salvataggio dello stato precedente
+	- Salvataggio delle informazioni critiche no salvate in 4
+8. Gestione dell'interrupt
+	- Lettura delle informazioni di controllo proveniente dal dispositivo
+9. Ripristino dello stato del processore (inverso di 7)
+10. Ritorno al processo in esecuzione
+
+**I SO moderni sono detti Interrupt Driven**
+- Il codice del SO entra in funzione come *interrupt handler*
+- Sono gli interrupt/trap che guidano l'avvicendamento dei processi
+
+### Interrupt Multipli
+Esiste la possibilià che avvengano **interrupt multipli**
+- Es. Originati da dispositivi diversi o interrupt annidati
+
+Due possibili approcci:
+- Disabilitazione degli interrupt
+- Interrupt annidati
+
+#### Disabilitazione degli Interrupt
+- Durante l'esecuzione di un interrupt handler ulteriori interrupt vengono ignorati o rimangono pendenti
+- Vengono riabilitati prima di riattivare il processo interrotto
+- Il processore verifica che non ci siano più interrupt, in caso contrario attiva l'interrupt handler corrispondente
+
+Il principale *vantaggio* è che l'approccio è più semplice, ma non si tiene conto di gestioni *time-critical*
+
+#### Interrupt Annidati
+- Possibile definire *priorità* per gli interrupt
+- Interrupt con priorità superiore interrompono gli handler di interrupt di priorità inferiore
+- Necessari meccanismi di salvataggio
+
+Il principale *vantaggio* è che dispositivi veloci possono essere serviti prima, ma l'approccio è più complesso e occorrono più stack
+
+## Dispositivi I/O
+Il controllore governa il dialogo con il dispositivo fisico. Esempi:
+- Il controller di un disco accetta una richiesta per volta
+- L'accodamento delle richieste in attesa è a carico del SO
+
+Due modalità possibili: **Programmed I/O** e **Interrupt-Driven I/O**
+
+### Programmed I/O (obsoleto)
+Operazione di Input:
+- La CPU carica tramite bus i parametri della richiesta in appositi registri del controller
+- Il dispositivo esegue la richiesta, il risultato viene memorizzato in un buffer locale sul controller, viene segnalata la fine tramite appositi registri di status
+- Il SO attende (**busy waiting/polling**) che il comando sia completato
+- Infine la CPU si salva i dati dal buffer del controller
+
+### Interrupt Driven I/O
+Operazione di Input:
+- La CPU carica tramite bus i parametri della richiesta in appositi registri del controller
+- *Il SO sospende l'esecuzione del processo e ne esegue un altro*
+- Il dispositivo esegue la richiesta, il risultato viene memorizzato in un buffer locale sul controller, *viene segnalata la fine tramite interrupt*
+- *al ricevimento dell'interrupt* la CPU copia i dati dal buffer in memoria
+
+Nel caso di operazioni di output il procedimento è simile con entrambi i metodi \\
+Il principale svantaggio è che la CPU è lenta nel trasferimento dati
+
+### Direct Memory Access (DMA)
+Il SO attiva l'operazione di I/O specificando l'indirizzo in memoria di destinazione/provenienza dei dati, il controller prende/pone i dati direttamente in memoria centrale e l'interrupt specifica solamente la conclusione di I/O
+
+C'è contesa all'accesso al bus, ma i device driver sono più semplici. È possibile perchè la CPU non accede al bus ad ogni ciclo di clock
+
+## Gestione della Memoria
+Memoria Centrale (RAM)
+- Assieme ai registri l'unico spazio che può essere acceduto *direttamente* dalla CPU. Accesso tramite `LOAD` e `STORE`
+- È memoria *volatile*, nei sistemi moderni l'accesso è tramite MMU
+
+### Memory Mapped I/O
+Quando un dispositivo è completamente indirizzabile tramite bus, quindi i dati vengono gestiti tramite indirizzi di memoria in RAM, la modifica causa il trasferimento dati da/verso il dispositivo
+
+Ad esempio il video grafico nei PC
+
+Il vantaggio è la gestione semplificata, ma rende necessarie tecniche di **sincronizzazione** di accesso
+
+### Dischi
+Dispositivi che consentono la memorizzazione non volatile dei dati
+
+Il controller gestisce:
+- `READ(head, sector)`
+- `WRITE(head, sector)`
+- `SEEK(cylinder)`
+
+`SEEK` corrisponde allo spostamento fisico del pettine della testina da un cilindro ad un altro, normalmente più costosa
+
+
+### SSD
+Numero di cicli di scrittura limitato, si leggono a blocchi e si scrivono a banchi (numerosi blocchi)
+
+### Gerarchia di memoria
+![Gerarchia di Memoria](img-schemi/gerarchiaDiMemoria.png)
+Nota: SAN = Storage Area Network, rete di dischi
+
+### Cache
+Memorizzare **parzialmente** i dati di una memoria in una seconda più costosa ma più efficente. \\
+Si applica a diversi livelli, sia hardware (CPU) che software (disco)
+
+Bisogna considerare un algoritmo di *replacement* e la coerenza dei dati
