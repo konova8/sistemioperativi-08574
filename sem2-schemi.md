@@ -281,3 +281,186 @@ Memorizzare **parzialmente** i dati di una memoria in una seconda più costosa m
 Si applica a diversi livelli, sia hardware (CPU) che software (disco)
 
 Bisogna considerare un algoritmo di *replacement* e la coerenza dei dati
+
+## Protezione Hardware
+I segnali multiprogrammati e multiutente richiedono di **meccanismi di protezione**, devono evitare che processi utente interferiscano con il SO. Può essere fatto solo software o è necessario anche meccanismo hardware?
+
+### Modo Utente / Modo Kernel
+Un processo in *kernel mode* può fare tutto, in *user mode* invece può accedere solo agli indirizzi per i suoi programmi in esecuzione (quindi si interfaccia con i device a cui ha accesso)
+
+**Kernel mode**/supervisore/privilegiata/**ring 0**:
+- I processi in questa modalità hanno accesso a tutte le istruzioni, anche quelle *privilegiate*
+
+**User mode**:
+- Non si ha accesso alle istruzioni privilegiate
+
+**Mode bit**: Bit nello *status register* per distinguere tra user/kernel mode
+
+Alla partenza il processore è in modalità kernel, dopo aver caricato il SO il controllo passa ad un processo utente, quindi il **mode bit** cambia stato e passa in modalità utente \\
+Quando avviene un *interrupt* l'hardware passa in modalità kernel
+
+### Protezione I/O
+Istruzioni I/O sono *privilegiate*, le richieste passano per il SO
+
+### Protezione Memoria
+Fondamentale, avviene tramite la **Memory Management Unit (MMU)**, che è un dispositivo hardware \\
+Traduzione di indirizzi logici in indirizzi fisici, gli indirizzi protetti sono quelli che non possono essere tradotti (agisce come una funzione la MMU)
+
+### System Call
+Le istruzioni di I/O sono privilegiate, e possono essere eseguite solo dal SO, i processi utente possono accedere ai device tramite delle **System Call**, che sono *trap* generate da istruzioni specifiche
+
+# Architettura dei Sistemi Operativi
+Diversi punti di vista:
+- **Servizi forniti**
+- **Interfaccia di sistema**
+- **Componenti di sistema**
+
+## Componenti di un SO
+- Gestione dei processi
+- Gestione della Memoria principale
+- Gestione della Memoria secondaria
+- Gestione del File System
+- Gestione dei dispositivi di I/O
+- Supporto *multiuser*
+- Networking
+- *Inter Process Communication* (IPC)
+
+### Gestione dei processi
+Un processo è un programma in esecuzione, il SO è responsabile di:
+- Creazione e terminazione
+- Sospensione e riattivazione
+- Gestione del deadlock
+- Comunicazione tra essi
+- Sicronizzazione tra essi
+
+### Gestione della memoria principale
+La memoria principale è volatile, ed è sostanzialmente un array di byte indirizzabili singolarmente, il SO è responsabile di:
+- Tenere traccia di quali parti di memoria sono usate e da chi
+- Decidere quali processi caricare quando diventa disponibile spazio
+- Alloca e dealloca
+- Usa memoria secondaria per *ampliare* la memoria principale (*virtual memory*)
+
+### Gestione della memoria secondaria
+La memoria secondaria è non volatile, e serve per contenere dati in modo permanente, il SO è responsabile di:
+- Gestione partizionamento
+- Gestione dell'accesso efficiente e affidabile (RAID)
+- *Disk Scheduling*
+
+### Gestione dell'I/O
+Richiede:
+- Interfaccia comune per la gestione dei device driver
+- Insieme di driver per dispositivi HW specifici
+- Sistema di gestione di buffer per la cache
+
+### Gestione del file system
+Un file è l'astrazione informatica di un archivio di dati \\
+Un *file system* è composto da un insieme di file
+
+Il SO è responsabile di:
+- Creazione e cancellazione di file e di directory
+- Manipolazione di questi ultimi
+- Codifica del file system su una sequenza di blocchi
+
+### Supporto Multiuser - protezione
+"Protezione" si riferisce al meccanismo per controllare gli accessi dei processi, esso è SW e deve:
+- Gestire l'identità del *proprietario* del processo
+- Gestire *chi può fare cosa*
+- Fornire un meccanismo per attuare la protezione
+
+### Networking
+Consente di far comunicare processi in esecuzioni su più macchine (o anche nella stessa macchina), e di condividere risorse
+
+Servizi:
+- Protocolli di comunicazione a basso livello
+	- TCP/IP
+	- UDP
+- Servizi di comunicazione ad alto livello
+	- File system distribuiti (NFS, SMB)
+
+## Struttura del programma "SO"
+- Sistemi con struttura semplice
+- Sistemi con struttura a stati
+- Microkernel
+- Macchine virtuali
+- Progettazione di un SO
+
+### Sistemi con struttura semplice
+SO che non hanno una struttura progettata a priori. Descritti come collezione di procedure
+
+Tipicamente sono SO semplici e limitati che hanno subito un'evoluzione al di là dello scopo originario
+
+#### MS-DOS - Free-DOS
+Interfacce e livelli di funzionalità non sono ben separate, quindi un programma solo può mandare in crash l'intero sistema
+
+#### UNIX
+![Unix Structure](img-schemi/unix.png)
+
+Anche UNIX è poco strutturato. È diviso in due parti, il *kernel* e i *programmi di sistema*
+
+Il *kernel* è delimitato dal basso dall'hardware, dall'alto alle system call
+
+### Sistemi con struttura a stati
+Il SO è strutturato tramite *layer*, ogni *layer* è basato sugli stati inferiori e offre servizi agli stati superiori
+
+Il principale vantaggio è la modularità
+- *encapsulation* e *data hiding*
+- *abstract data types*
+
+Vengono semplificati implementazione, debugging e ristrutturazione di sistema
+
+**Problemi**:
+- Tendono ad essere meno efficienti, ogni strato aggiunge overhead (anche minimo)
+- Occorre studiare attentamente la struttura dei layer (API)
+
+**Risultato**:
+I moderni sistemi con struttura a strati tendono ad avere meno strati
+
+### Politiche e meccanismi
+La politica decide cosa deve essere fatto, e i meccanismi attuano la decisione
+
+La componente che prende le decisioni può essere diversa da quella che implementa i meccanismi, questo rende possibile cambiare uno senza cambiare l'altro
+
+Nei sistemi a microkernel ci stanno solo i meccanismi, le decisioni politiche sono decise da un componente esterno (processi)
+
+Al contrario in MacOS <= 9 e Windows 9x politiche e meccanismi gestiti sono inserite nel kernel, anche la gestione del server grafico, così hai un unico look'n'feel
+
+### Kernel
+#### Kernel Monolitici
+Aggregato unico di procedure di gestione mutualmente coordinate, molto efficente
+
+Le system call sono servizi forniti dal kernel, eseguite in kernel mode
+
+Esiste modularità, anche se esiste un unico corpo in esecuzione
+
+Se fallisce un processo in kernel mode c'è un kernel panic, e il sistema va in crash
+
+I moderni kernel monolitici (Linux, FreeBSD, UNIX) permette il caricamento di moduli eseguibili a runtime
+
+#### Microkernel
+I kernel però possono continuare a crescere in complessità, con i microkernel invece vengono mantenute all'interno del kernel solo le parti essenziali:
+- Funzionalità minime di gestione dei *processi* e della *memoria*
+- Meccanismi di comunicazione per permettere ai processi client di chiedere servizi ai processi server, comunicazione basata sul **message passing**
+
+Le system call di un SO basato su microkernel sono `send` e `receive`, tramite queste è posibile implementare l'API standard di gran parte dei SO
+
+**Vantaggi**:
+- Kernel semplice e facile da realizzare
+- Più espandibile e modificabile (per aggiungere un servizio basta aggiungere un processo a livello kernel
+- Più portabile e robusto
+- Più sicuro
+- Più adatto a sistemi distribuiti
+
+**Svantaggi**:
+- Maggiore inefficienza
+
+#### Kernel Ibridi
+Sono microkernel modificati, mantengono una parte di *kernel space* per ragioni di maggiore efficienza, il resto viene gestito tramite API \\
+Per esempio Windows ha la parte grafica nel kernel
+
+NB: Sono diversi dai kernel monolitici in grado di effettuare il caricamento di moduli a run-time
+
+### Macchine virtuali
+
+
+### Progettazione di un SO
+
