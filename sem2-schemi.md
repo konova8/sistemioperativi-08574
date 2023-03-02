@@ -460,7 +460,40 @@ Per esempio Windows ha la parte grafica nel kernel
 NB: Sono diversi dai kernel monolitici in grado di effettuare il caricamento di moduli a run-time
 
 ### Macchine virtuali
+Approccio diverso al multitasking, si crea l'astrazione di una macchina virtuale
 
+Le VM emulano il funzionamento dell'hardware, quindi possono emulare anche architetture HW diverse
+
+Gli svantaggi sono l'**inefficienza** e la **difficoltà di condivisione delle risorse**
+
+**HyperVisor**: Componente che gestisce il passaggio di istruzioni tra HW e VM
+
+Due tipi di VM:
+- ABI, mascherano HW e SO, fornita da una **PVM** (Process VM)
+- ISA, maschera solo HW, fornita da una **SVM** (System VM)
+
+**KVM** (Kernel Virtual Machine): Le istruzioni passano direttamente alla CPU, solo in caso di *trap* la CPU passa la gestione all'*hypervisor* \\
+Nota: Bisogna che sia la stessa architettura per usare KVM
 
 ### Progettazione di un SO
+Definire **obbiettivi** e **costraint** che vogliamo e abbiamo \\
+La progettazione sarà influenzata dall'HW dal basso e dalle applicazioni dal sistema dall'alto
+
+#### Tailoring the OS
+Configurare il SO per avere esattamente le caratteristiche necessarie, perciò è necessario prevedere meccanismi per la generazione del SO specifico per l'architettura utilizzata
+
+#### System Generation
+
+I parametri tipici per la generazione di un SO sono:
+- Tipo di CPU
+- Quantità di memoria centrale
+- Periferiche utilizzate
+- Numero utenti, processi, ampiezza del buffer, tipo di processi, ecc
+
+I metodi che possono essere utilizzati sono:
+- Rigenerazione del kernel con nuovi parametri/driver (UNIX e Linux)
+- Prevedere la gestione di moduli aggiuntivi collegati al boot
+	- Moduli Linux
+	- Estensioni Kernel (MacOS)
+	- Kernel-Mode Driver Windows
 
