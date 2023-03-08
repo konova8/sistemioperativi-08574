@@ -497,3 +497,163 @@ I metodi che possono essere utilizzati sono:
 	- Estensioni Kernel (MacOS)
 	- Kernel-Mode Driver Windows
 
+# Scheduling
+## Scheduler, Processi e thread
+Un SO è un gestore di risorse (processore, memoria primaria e secondaria, dispositivi)
+
+Ha bisogno quindi di strutture dati per mantenere informazioni sulle risorse gestite
+- Tabelle di memoria
+	- Allocazione memoria, informazioni per i meccanismi di protezione
+- Tabelle di I/O
+	- Informazioni sull'assegnamento dei dispositivi utilizzati dalla macchina
+	- Gestione di code di richieste
+- Tabelle del file system
+	- Elenco dispositivi utilizzati per manetenere il file system
+	- Elenco file aperti e loro stato
+- Tabelle dei processi
+	- Di cui parliamo
+
+### PCB
+Manifestazione fisica di un processo:
+- Codice da eseguire (segmento codice)
+- Dati su cui operare (segmento dati)
+- Stack di lavoro per la gestione di chiamate di funzione, passaggio dei parametri e variabili locali
+- **Insieme di attributi** contenente tutte le informazioni per la gestione del processo stesso 
+
+Questo insieme di attributi si chiama Descrittore di Processo, **Process Control Block** (PCB)
+
+La **tabella per la gestione dei processi** contiene i PCB, ogni processo ne ha uno associato
+
+Informazioni contenute nel PCB:
+- Informazioni di identificazione di processo
+	- Identificatore di processo (pid), può essere semplicemente un indice, e/o un numero progressivo
+	- Identificatori di altri processi logicamente collegati al processo, come il pid del padre
+	- ID dell'utente che ha richiesto l'esecuzione del processo
+- Informazioni di stato del processo
+	- Registri generali del processore
+	- Registri speciali (Program Counter, registri di stato, ecc)
+- Informazioni di controllo del processo
+	- Scheduling
+		- Stato del processo
+		- Informazioni particolari per l'algoritmo di scheduling utilizzato
+		- identificatore dell'evento per cui il processo è in attesa
+	- Gestione della memoria
+		- Configurazione della MMU (Es. Puntatori alle tabelle delle pagine)
+	- Accounting
+		- Tempo di esecuzione del processo
+		- Tempo trascorso dall'attivazione di un processo
+	- Risorse
+		- Risorse controllate dal processo
+	- InterProcess Communication
+		- Stato di segnali, semafori, ecc
+
+### Scheduler
+Componente più importante del kernel, gestisce l'avvicentamento dei processi
+- Decide quale processo deve essere in esecuzione
+- Interviene quando deve essere gestita una operazione di I/O
+
+#### Schedule - Scheduling - Scheduler
+**Schedule**: Sequenza temporale di assegnazioni delle risorse da gestire ai richiedenti
+
+**Scheduling**: Azione di calcolare uno schedule
+
+**Scheduler**: Componente software che calcola la schedule
+
+### Content Switching
+Tutte le volte che avviene un interrupt il processore è soggetto ad un *mode switching*
+
+Durante la gestione dell'interrupt:
+- Chiamato lo scheduler
+- Se lo scheduler decide di eseguire un altro processo, il sistema è soggetto ad un **context switching**
+- Lo stato del processo attuale viene salvato nel PCB corrispondente
+- Lo stato di quello selezionato viene caricato dal PCB al processore
+
+#### Schema di funzionamento di un kernel
+![Schema di funzionamento di un kernel](img-schemi/funzKernel.png)
+
+### Vita di un processo
+![Vita Processo](img-schemi/vitaProc.png)
+![Vita Processo 2](img-schemi/vitaProc2.png)
+
+### Gerarchia di processi
+Nella maggioranza dei SO quando un processo crea un nuovo processo il figlio viene creato ad immagine del padre, si crea così un albero di processi
+
+Così è più semplice il procedimento di creazione di processi, ciò che non viene specificato viene ereditato dal padre
+
+### Processi e Thread
+Tutti i SO moderni supportano processi multithreaded, in questi ultimi esistono diverse linee di controllo, ognuna delle uali può eseguire un diverso insieme di istruzioni
+- Es. Un thread per ogni finestra aperta del browser
+
+Ogni thread possiede la propria copia dello **stato del processore**, il proprio **program counter** e uno **stack separato**
+
+I thread condividono lo spazio in memoria e le risorse
+- Es. Condivisione di parametri di configurazione tra i vari thread
+
+Gestire i thread è più economico in generale, creare thread all'interno dello stesso processo e fare *context switching* tra thread è meno costoso
+
+#### User Thread
+Vengono supportati sopra il kernel e vengon implementati da una **thread library** a libello utente
+
+- Vantaggi: Implementazione molto efficiente
+- Svantaggi: Se il kernel è single-threaded, qualsiasi system call bloccante causa il blocco dell'intero processo
+
+#### Kernel Thread
+Vengono supportati direttamente dal SO
+
+- Vantaggi: Se un thread esegue una operazione di I/O il kernel può selezionare un altro thread in attesa di essere eseguito
+- Svantaggi: L'implementazione è più lenta, perchè richiede un passaggio da utente a supervisore
+
+## Scheduling
+### Rappresentazione degli schedule
+Per rappresentare uno schedule si usano i diagrammi di Gantt
+
+![Diagramma di Gantt es](img-schemi/gantt.png)
+
+### Tipi di scheduler
+Eventi che possono causare un context switch
+1. Stato *running* -> *waiting* (seleziono altro processo per l'esecuzione)
+2. Stato *running* -> *ready* (continuo l'esecuzione)
+3. Stato *waiting* -> *ready* (continuo l'esecuzione)
+4. Quando termina (seleziono altro processo per l'esecuzione)
+
+- Scheduler **non-preemptive** o **cooperativo**
+	- Se i *context switch* avvengono solo per condizioni 1 e 4
+	- In altre parole "Il controllo della risorsa viene trasferito solo se l'assegnamento attuale lo cede *volontariamente*"
+	- Vecchi SO
+
+- Scheduler **preemptive**
+	- Se i *context switch* possono avvenire in qualsiasi condizione
+	- In altre parole "Il controllo della risorsa viene volto all'assegnatoario attuale a causa di un evento"
+	- Tutti gli Scheduler moderni
+
+### Criteri di scelta di uno scheduler
+- Utilizzo della risorsa (CPU)
+	- Tempo in cui la CPU è occupata ad eseguire processi
+	- Da massimizzare
+- Throughput
+	- Numero di processi completati per unità di tempo
+	- Da massimizzare
+- Tempo di turnaround
+	- Tempo che intercorre dalla sottomissione di un processo alla sua terminazione
+	- Da minimizzare
+- Tempo di attesa
+	- Tempo trascorso da un processo nella coda ready
+	- Da minimizzare
+- Tempo di risposta
+	- Tempo che intercorre tra la sottomissione di un processo e il tempo di *prima risposta*
+	- Da minimizzare (importante per programmi interattivi)
+
+### Caratteristiche dei processi
+Durante l'esecuzione di un processo:
+- Si alternano periodi di attività svolte dalla CPU (*CPU burst*)
+	- Processi con questa caratteristica sono detti *CPU bound*
+- E periodi di attività di I/O (*I/O burst*)
+	- Processi con questa caratteristica sono detti *I/O bound*
+
+### Algoritmi di Scheduling
+- First Come, First Served
+- Shortest-Job First
+	- Shortest-Next-CPU-Burst First
+	- Shortest-Remaning-Time First
+- Round-Robin
+
