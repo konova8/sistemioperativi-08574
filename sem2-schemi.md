@@ -657,3 +657,100 @@ Durante l'esecuzione di un processo:
 	- Shortest-Remaning-Time First
 - Round-Robin
 
+#### First Come, First Served (FCFS)
+Chi prima arriva prima viene servito, politica senza *preemption*
+
+Implementazione tramite una semplice coda FIFO
+
+Problemi:
+- Elevati tempi medi di attesa
+- Processi CPU bound ritardano i processi I/O bound
+
+Chiaramente non adatto a situazioni interattive, i processi I/O bound si mettono in coda dietro al processo CPU bound, e in alcuni casi la *ready queue* si può svuotare  (Convoy effect)
+
+![Convoy effect](img-schemi/convoy-eff.png)
+
+#### Shortest Job First (SJF)
+Cerchiamo di stimare la durata di un processo che deve essere eseguito, così da far eseguire prima i processi più veloci
+
+Nella pratica non è implementabile, bisogna fare una stima approssimativa basata sul CPU burst dell'esecuzione del processo eseguita precedentemente
+
+Si usa la *media esponenziale*:
+$$\tau_{n+1} = \sum_{j = 0 \dots n} \alpha (1 - \alpha)^j t_{n-j} + (1 - \alpha)^{n+1} \tau_0$$
+
+Nota: SJF può essere soggetto a starvation
+
+Ne esistono due versioni:
+- **non preemptive**: Processo corrente esegue fino al completamento del suo CPU burst
+- **preemptive**: Processo corrente può essere messo nella coda ready, "Shortest-Remaining-Time First"
+
+#### Scheduling Round-Robin
+Un processo non può rimanere in esecuzione per un tempo superiore alla durata del *quanto di tempo*
+
+Implementazione:
+- L'insieme dei processi pronti è organizzato come una coda, due possibilità:
+- Un processo può lasciare il processore *volontariamente*, in seguito ad un'operazione di I/O
+- Un processo può *esaurire il suo quanto di tempo* senza completare il suo CPU burst, nel qual caso viene aggiunto in fondo alla coda dei processi pronti
+- Necessario che l'hardware fornisca un timer (*interval timer*) che agisca come "sveglia" del processore
+- È un dispositivo che è in grado di fornire un interrupt allo scadere del tempo prefissato
+- Il timer viene interfacciato come se fosse un'unità di I/O
+
+La durante del quanto di tempo è un parametro critico, se è breve il sistema è meno efficente (cambia processo spesso), se è lungo in caso di numerosi processi pronti ci sono lunghi periodi di inattività di ogni singolo processo
+
+Problemi:
+- Non c'è un processo più importante degli altri, però questo è troppo democratico
+	- Ad esempio una mail può aspettare 500ms, un frame video no
+- Abbiamo bisogno di un dispositivo HW per scandire il tempo
+
+#### Scheduling a priorità
+Ad ogni processo è associata una specifica priorità, e lo scheduler sceglie il processo pronto con la priorità più alta
+
+Priorità definite:
+- Dal Sistema operativo (SJF sistema basato su priorità definite da SO)
+- Esternamente (imposte dal livello utente)
+
+Diversi tipi di priorità:
+- **Statica**: Non cambia durante la vita dei processo (ma processi a bassa priorità possono essere soggetti a *starvation* da processi ad alta priorità)
+- **Dinamica**: Varia durante la vita del processo, così da evitare *starvation*
+- **Aging**: Più il processo è rimasto in attesa più ha una priorità alta, altro modo per evitare starvation
+
+##### Scheduling a Classi di priorità
+È possibile creare diverse *classi di processi* con caratteristiche simili per assegnare ad ogni classe diverse priorità
+
+##### Scheduling Multilivello
+All'interno di ogni classe è possibile usare una politica specifica adatta alla classe \
+Quindi dopo aver scelto un processo dalla classe con priorità più alta sceglie il processo in base alla politica interna alla classe
+
+#### Scheduling Real Time
+In un sistema real time la correttezza del risultato dipende anche dal tempo in cui il risultato viene emesso
+
+Nei sistemi **Hard real time** è necessario non superare mai la deadline di esecuzione dei programmi \
+Nei sistemi **Soft real time** sono tollerabili errori occasionali
+
+- Processi periodici: Processi che vengono riattivati con una cadenza regolare
+- Processi aperiodici: Processi che vengono scatenati da un evento sporadico
+
+##### Esempi di Scheduler Real Time
+- **Rate Monotonic**: Politica di Scheduling, valida alle seguenti condizioni
+	- Ogni processo periodico deve completare entro il suo periodo
+	- Tutti i processi sono indipendenti
+	- La preemprion avviene istantaneamente e senza overhead
+- Assegnata staticamente la priorità ad ogni processo
+
+- **Earliest Deadline First**: Politica di scheduling per processi periodici real time
+	- Viene scelto di volta in volta il processo che ha la deadline più vicina
+
+# Risorse
+
+
+
+
+
+
+
+
+
+
+
+
+
