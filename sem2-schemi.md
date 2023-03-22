@@ -741,16 +741,189 @@ Nei sistemi **Soft real time** sono tollerabili errori occasionali
 	- Viene scelto di volta in volta il processo che ha la deadline più vicina
 
 # Risorse
+## Classi di risorse
+Risorse suddivisi in classi, risorse apparteneneti alla stessa classe sono equivalenti
+- Esempio: Byte della memoria, Stampanti dello stesso tipo, ecc
 
+Risorse di una classe = **Istanze**
+Numero di risorse in una classe = **Molteplicità**
 
+Un processo non può richiedere una specifica risorsa, ma solo una risorsa di una specifica classe
 
+## Assegnazione delle risorse
+- **Allocazione Statica**
+	- Avviene al momento della creazione del processo, termina alla terminazione del processo stesso
+	- Esempi: *Descrittori*, *Aree di memoria* (in alcuni casi)
+- **Allocazione Dinamica**
+	- Richiesta durante l'esistenza di un processo, terminazione a fine dell'utilizzo
+	- Esempi: *Periferiche di I/O*, *Aree di memoria* (in alcuni casi)
 
+## Tipi di richieste
+- **Richiesta singola**
+	- Singola risorsa di una classe definita
+- **Richiesta multipla**
+	- Una o più classi, per ogni classo ad una o più risorse
+- **Richiesta bloccante**
+	- Processo richiedente si sospende se non ottiene l'assegnazione
+- **Richiesta non bloccante**
+	- Mancata assegnazione viene notificata al processo, senza provocarne la sospensione
 
+## Tipi di risorse
+- **Risorse non condivisibili** (seriali)
+	- Esempi: *Processori*, *sezioni critiche*, *stampanti*
+- **Risorse condivisibili**
+	- Esempi: *File in sola lettura*
+- **Risorse Prerilasciabili** (*preemptable*)
+	- Se la funzione di gestione della risorsa può sottrarla ad un processo prima che abbia finito di usarla
+	- Il processo che subisce il prerilascio deve quindi sospendersi, e dopo che sarà stata utilizzata tornerà al processo sospeso
+	- Prerilasciabile se lo stato non si modifica durante l'utilizzo (o se può essere facilmente salvato/ripristinato)
+	- Esempi: *Processore*, *Blocchi o partizioni di memoria*
+- **Risorse non prerilasciabili**
+	- Il contrario
 
+## Deadlock
+### Condizioni necessarie per un deadlock
+- Mutua esclusione o non condivisibilità
+- Assenza di prerilascio
+- Richieste bloccanti (*hold and wait*)
+- Attesa circolare
 
+Devono valere tutte queste affinchè si presenti un *deadlock*, tutte e quattro queste condizioni diventano anche sufficienti
 
+### Grafo di Holt
+Grafo per riconoscere se è un processo è in *deadlock*
 
+Caratteristiche:
+- Grafo *diretto*: archi monodirezionali
+- Grafo *bipartito*: Composto da due sottoinsiemi (*risorse* e *processi*), archi partono da un sottoinsieme e arriva all'altro
+- Archi *risorsa -> processo* indica l'assegnamento della risorsa al processo
+- Archi *processo -> risorsa* indica la richiesta della risorsa da parte del processo
+- I Processi sono rappresentati da *cerchi*
+- Le Classi sono rappresenetate come *contenitori rettangolari*
+- Le Risorse sono rappresentate come *punti* all'interno delle classi
+- **Nota**: Non si rappresentano archi se le relative richieste possono essere soddisfatte
 
+![EsGrafoHolt](img-schemi/esGrafoHolt.png)
 
+#### Notazione operativa
+- Archi
+	- Molteplicità della richiesta/assegnazione
+- All'interno delle classi
+	- Numero di risorse non ancora assegnate
 
+![EsGrafoHolt2](img-schemi/esGrafoHolt2.png)
+
+### Metodi per la gestione del Deadlock
+- **Deadlock detection and recovery**
+	- Permettere al sistema di entrare in stati di deadlock, utilizzare un algoritmo per rilevare questo stato ed eseguire una operazione di recovery
+- **Deadlock prevention/avoidance**
+	- Impedire al sistema di entrare in deadlock
+- **Ostrich Algorithm** (Algoritmo dello struzzo)
+	- Ignorare il problema (Il più usato)
+
+### Deadlock Detection
+Manteniamo un grafo di Holt e utilizziamolo per controllare i deadlock, come si riconoscono?
+
+Se ho una sola risorsa per classe basta che ci sia un ciclo per avere deadlock
+
+![GrafoWaitFor](img-schemi/GrafoWaitFor.png)
+
+Se abbiamo più risorse per classe allora non basta il ciclo, dobbiamo ridurre il grafo di Holt
+- Rimuoviamo gli archi di un nodo se ha solo archi entranti
+- Assegnamo le risorse di classi libere agli atri processi
+- Ripetiamo per altri nodi
+
+Se il grafo è **completamente riducibile** (ovvero esiste una sequenzadi passi di riduzione che eliina tutti gli archi del grafo) allora *non c'è deadlock*
+
+#### Esempio
+![Passo1](img-schemi/EsRiduzPasso1.png)
+![Passo2](img-schemi/EsRiduzPasso2.png)
+![Passo3](img-schemi/EsRiduzPasso3.png)
+![Passo4](img-schemi/EsRiduzPasso4.png)
+![Passo5](img-schemi/EsRiduzPasso5.png)
+
+### Deadlock Detection - Knot
+- Dato un nodo `n`, l'insieme dei nodi raggiungibili da `n` viene detto *insieme di raggiungibilità* di `n` (`R(n)`)
+- Un **knot** del grafo è un sottoinsieme `M` non banale tale che per ogni elemento `n` di `M`, `R(n)` = `M`
+
+**Teorema**:
+- Dato un grafo di Holt con una sola richiesta sospesa per processo
+- Se le risorse sono *a richiesta bloccante*, *non condivisibili* e *non prerilasciabili*
+- Allora il grafo rappresenta uno stato di deadlock se e solo se esiste un knot
+
+### Deadlock Recovery
+La soluzione dopo il rilevamento di un deadlock può essere manuale o automatica
+- **Terminazione totale**
+- **Terminazione parziale** (un processo alla volta "sperando" che il deadlock sparisca)
+- **Checkpoint/Rollback**
+	- *Checkpoint*: Stato dei processi salvato su disco periodicamente
+	- *Rollback*: Se c'è *deadlock*, si ripristinano uno o più processi finchè il *deadlock* non scompare
+
+Terminare i processi può essere costoso e può lasciare risorse in uno stato incoerente
+
+### Deadlock Prevention
+Per evitare il *deadlock* si elimina una delle 4 condizioni, così da eliminarlo *strutturalmente*
+- Eliminare Mutua Esclusione
+	- Permettere condivisione di risorse
+	- Problema: Non si può usare sempre (descrittori) e può finire lo spazio in coda (stampanti)
+- Eliminare Richiesta Bloccante
+	- Rende possibile richiedere che un processo richieda tutte le risorse all'inizio della computazione
+	- Problemi: Parallelismo ridotto e l'insieme delle richieste non è sempre noto all'inizio
+- Eliminare Assenza di prerilascio
+	- Non sempre possibile
+- Eliminare Attesa Circolare
+	- Necessario creare una gerarchia per le classi di risorse, se un processo vuole allocare un risorsa a priorità `n`, deve rilasciare tutte quelle a priorità maggiore di `n`
+	- Problema: Inefficiente
+
+### Deadlock Avoidance
+Prima di assegnare una risorsa ad un processo, si controlla se l'operazione può portare ad un *deadlock*, in caso l'operazione viene ritardata
+
+**Algoritmo del Banchiere** (Dijkstra)
+- Un banchiere desiderea condividere un capitale (fisso) con un numero (prefissato) di clienti
+- Ogni cliente specifica in anticipo la sua necessità massima di denaro
+- I clienti fanno due tipi di operazioni: *richieste* di prestito o *restituzioni*
+- Ogni volta che le richieste vengono accolte si garantisce la restituzione in un tempo finito
+
+Descrizione:
+- $N$ = Numero di clienti
+- $IC$ = Capitale iniziale
+- $c_i$ = Limite di credito del cliente $i$ ($c_i \leq IC$)
+- $p_i$ = Denaro prestato al clinte $i$ ($p_i \leq c_i$)
+- $n_i = c_i - p_i$ = Credito residuo del cliente $i$
+- $COH = IC - \sum_{i=1, ... N} p_i$ = Saldo di cassa
+
+**Stato SAFE**: Sostanzialmente se la disponibilità in ogni situzione è maggiore del credito residuo del cliente successivo in una permutazione dei clienti
+- Formalmente:
+	- Sia $s$ una permutazione di $1, ..., N$
+	- Vettore $avail$
+		- $avail[1] = COH$
+		- $avail[j+1] = avail[j] + p_{s(j)}$
+	- Stato SAFE se vale $n_{s(j)} \leq avail[j]$
+
+**Stato UNSAFE**: Condizione necessaria *ma non sufficiente* per il deadlock
+
+#### Esempio Stato SAFE
+![Esempio Stato Safe](img-schemi/esBancSafe.png)
+
+#### Esempio Stato UNSAFE
+![Esempio Stato Unsafe](img-schemi/esBancUnsafe.png)
+
+Se il cliente 5 restituisce il suo prestito di 35 euro la situazione ritorna SAFE, quindi arrivare ad una situazione UNSAFE non implica deadlock
+
+Nel nostro caso il denaro sono le risorse, se abbiamo più classi di risorse? Basta considerare più valute
+
+### Algoritmo del banchiere multivaluta
+Usiamo un vettore per indicare le risorse
+
+Tutto il resto è analogo al caso con singola valuta/singola classe
+
+**Problema**: La regola per ordinare i processi secondo i valori di $n_i$ non è applicabile, l'ordine può essere in generale diverso tra le diverse valute \
+**Soluzione**: Si può creare la sequenza procedendo passo passo aggiungendo un processo a caso tra quelli interamente soddifacibili, ovvero al passo $j$ si sceglie quelli per cui $n_{s(j)} \leq avail[j]$
+
+**Teorema**: Se durante la costruzione della sequenza $s$ si giunge ad un punto in cui nessun processo risulta soddisfacibile, lo stato non è SAFE. Quindi non esiste una sequenza che consenta di soddisfare tutti i processi
+
+### Algoritmo dello struzzo
+Decidere di non gestire i *deadlock*, perchè il costo per evitarli è troppo alto
+
+Oggi la soluzione più adottata (UNIX e JVM)
 
