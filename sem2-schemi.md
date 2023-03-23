@@ -920,10 +920,202 @@ Tutto il resto è analogo al caso con singola valuta/singola classe
 **Problema**: La regola per ordinare i processi secondo i valori di $n_i$ non è applicabile, l'ordine può essere in generale diverso tra le diverse valute \
 **Soluzione**: Si può creare la sequenza procedendo passo passo aggiungendo un processo a caso tra quelli interamente soddifacibili, ovvero al passo $j$ si sceglie quelli per cui $n_{s(j)} \leq avail[j]$
 
-**Teorema**: Se durante la costruzione della sequenza $s$ si giunge ad un punto in cui nessun processo risulta soddisfacibile, lo stato non è SAFE. Quindi non esiste una sequenza che consenta di soddisfare tutti i processi
+**Teorema**: Se durante la costruzione della sequenza $s$ si giunge ad un punto in cui nessun processo risulta soddisfacibile, lo stato non è SAFE. Quindi non esiste una sequenza che consenta di soddisfare tutti i processi \
+Si dimostra per assurdo, vedendo che se in un punto non è possibile soddisfare le richieste (stato SAFE), e per assurdo potrebbe esserci un'altra sequenza per cui tutte le richieste sono soddisfacibili, questo implicherebbe che anche la prima sequenza sia soddisfacibile, quindi si raggiunge un assurdo
 
 ### Algoritmo dello struzzo
 Decidere di non gestire i *deadlock*, perchè il costo per evitarli è troppo alto
 
 Oggi la soluzione più adottata (UNIX e JVM)
+
+# Gestione della Memoria
+## Introduzione
+La parte di SO che gestisce la memoria principale si chiama **Memory Manager**
+
+In alcuni casi il memory manager può gestire anche parte della memoria secondaria, al fine di emulare memoria principale
+
+I suoi compiti sono:
+- Tenere traccia della memoria libera/occupata
+- Allocare memoria ai processi e deallocarla quando non è più necessaria
+
+Nota: **Memory Manager** è SW, **Memory Management Unit** (MMU) è HW
+
+## Binding, Loading, Linking
+ > Associazione di indirizzi logici di memoria ai corrispondenti indirizzi fisici
+
+ Può avvenire durante:
+ - *Compilazione*
+ - *Caricamento*
+ - *Esecuzione*
+
+### Binding durante la Compilazione
+Indirizzi vengono calcolari al momento della compilazione, e restano gli stessi ad ogni esecuzione del programma. Codice detto **assoluto**
+
+Esempi: Arduino, Kernel, file COM
+
+- **Vantaggi**
+	- Non richiede HW speciale (Come MMU)
+	- Semplice
+	- Molto veloce
+- **Svantaggi**
+	- Non funziona con la multiprogrammazione
+
+### Binding durante il Caricamento
+Il compilato non contiene indirizzi assoluti ma relativi. Codice detto **rilocabile** \
+Durante il caricamento il *loader* si preoccupa di aggiornare tutti i riferimenti agli indirizzi di memoria coerentemente all'indirizzo iniziale di caricamento
+
+- **Vantaggi**
+	- Permette multiprogrammazione
+	- Non richiede HW speciale (Come MMU)
+- **Svantaggi**
+	- Richiede traduzione da parte del *loader*, quindi formati particolari per gli eseguibili
+
+### Binding durante l'Esecuzione
+Simile al Binding a Caricamento, ma fatto a RunTime dalla MMU
+
+Spazio di indirizzamento **logico**
+- Ogni processo è associato ad uno spazio di indirizzamento logico
+- Gli indirizzi usati sono quelli logici
+
+Spazio di indirizzamento **fisico**
+- Ad ogni indirizzo logico ne corrisponde uno fisico
+- La MMU opera come una funzione di traduzione da indirizzi logici ad indirizzi fisici
+
+#### Esempi di MMU
+**Riclocazione**: Utilizzo un registro per sapere di quanto aumentare l'indirizzo logico (Es. La CPU usa l'indirizzo logico 897, il registro per la rilocazione ha valore 24000, allora l'indirizzo effettivo utilizzato in memoria sarà 24897)
+
+Si può anche aggiungere un **limite**, se l'indirizzo logico è maggiore/minore di quello allora va in errore
+
+### Loading Dinamico
+> Cosiste nel poter caricare alcune routine di libreria solo quando vengono richiamate
+
+Viene implementato caricando le routine come un altro programma, solo quando vengono chiamate
+
+Quindi rispetto al **Linking Statico** (dove tutti i riferimento vengono "risolti" a Compile Time), il **Linking Dinamico** posticipa il linking al momento di riferimento durante l'esecuzione
+
+Consente quindi di avere eseguibili più compatti, ed esiste una sola istanza di libreria in memoria e tutti i processi eseguono il codice di quella istanza
+
+**Vantaggi**: Oltre al rispario di memoria consente l'aggiornamento automatico delle versioni delle librerie
+
+**Svantaggi**: Può causare problemi di versioning
+
+Oggi si usa il linking dinamico tramite il linking dinamico, quindi è possibile al momento dell'esecuzione linkare in modo dinamico librerie aggiuntive (Si usa per i Plug-In)
+
+## Allocazione
+> Consiste nel reperire ed assegnare uno spazio di memoria fisica ad un programma
+
+Allocazione:
+- **Contigua**: Spazio assegnato formato da celle conseguive
+- **Non Contigua**: Possibile assegnare aree di memoria separate (la MMU basata su rilocazione non la supporta)
+- **Statica**: Il processo deve mantenere la propia area di memoria dal caricamento alla terminazione, non è possibile la rilocazione
+- **Dinamica**: Il processo può essere spostato all'interno della memoria
+
+### Allocazione a partizioni fisse
+> La memoria disponibile (quella non occupata dal SO) suddivisa in partizioni. Ogni processo viene caricato in una differente partizione
+
+**Statica e contigua**, molto semplice ma si spreca memoria. Inoltre c'è parallelismo limitato
+
+Possibile utilizzare una coda per singola partizione o per tutte
+
+Utilizzato nei sistemi monoprogrammati, come i *sistemi embedded*
+
+#### Frammentazione Interna
+Quando nell'allocazione a partizioni fisse il processo occupa una dimensione inferiore di quella della partizione che contiene, e quindi lo spazio non utilizzato rimane libero e sprecato
+
+### Allocazioni a partizioni dinamiche
+> La memoria disponibile viene allocata dinamicamente ai processi
+
+**Statica e contigua**, possono esserci zone inutilizzate (processi che terminano o processi che usano meno memoria di quella allocata)
+
+#### Frammentazione Esterna
+"Buchi" tra le diverse partizioni, causate da susseguirsi di allocazioni e deallocazioni. Si risolve con la **compattazione**, rilocando i processi durante l'esecuzione
+
+Il problema principale è che è il costo e che non può essere usata in sistemi interattivi
+
+#### Strutture dati: Mappa di bit
+> Memoria suddivisa in unità di allocazione, ogni unità assegnata ad un bit. Le unità se sono libere sono associate ad un bit di valore 0, se occupate associate ad un bit di valore 1
+
+Il problema è che possiamo individuare uno spazio di memoria libera di $k$ bit in tempo $O(m)$, con $m$ numero di unità di allocazione. Quindi è molto lento
+
+#### Strutture dati: Lista con puntatori
+> Si mantiene una lista linkata dei blocchi allocati e liberi in memoria
+
+La deallocazione di memoria può essere fatta in tempo $O(1)$, ma ha comunque problemi di efficienza
+
+#### Come selezionare un blocco libero?
+- First Fit: Scorre la lista di blocchi liberi finchè non ne trova uno libero grande abbastanza
+- Next Fit: Invece di cercare il primo blocco libero dall'inizio della memoria cerca di riempire più omogeneamente la memoria ripartendo da dove ha allocato l'ultimo blocco
+	- Più lento di First Fit
+- Best Fit: Cerca il blocco più piccolo, ma grande abbastanza
+	- Genera più frammentazione di First Fit
+- Worst Fit: Il contrario
+	- Difficile allocare processi di grandi dimensioni
+
+## Paginazione
+> Divide la memoria logica in **pagine** e la memoria fisica in **frame**, e rende possibile allocare memoria non contigua facendo credere al processo che sia contigua (necessita infatti di HW dedicato)
+
+La frammentazione interna ed esterna per quanto ancora esistenti sono estremamente limitate, quindi vengono ignorate
+
+La **tabella delle pagine** è quella che dice dove sono presenti le varie pagine in ordine
+
+![Paginazione 1](img-schemi/pagEs1.png)
+![Paginazione 2](img-schemi/pagEs2.png)
+
+### Dimensione delle pagine
+Oggi si usano `4KB` di dimensione, si è visto che è un buon compromesso tra efficienza (tabella delle pagine troppo grossa) e perdite dovute alla frammentaziozne
+
+#### Dove mettere la page table?
+1. Registri dedicati
+	- Insieme di registri all'interno della MMU o nella CPU
+	- Troppo costoso, se pagine sono da `4KB` con processore a 32bit (quindi indirizzi a 32 bit) il numero di pagine nella page table è di 1.000.000
+
+2. Completamente in memoria
+	- Economico
+	- Numero di accessi in memoria raddoppiato, uno per accedere alla tabella delle pagine, e uno al dato
+
+### Translation lookaside buffer (TLB)
+> Insieme di registri associativi ad alta velocità. Ogni registro suddiviso in due parti, una chiave e un valore
+
+Operazione di lookup:
+- Richiesta la ricerca di una chiave
+- Chiave confrontata in parallelo con tutte le chiavi presenti nel buffer
+- Se chiave presente ritorna il valore corrispondente
+- Se chiave assente si utilizza la tabella in memoria (più lenta)
+
+La TLB agisce come cache per la page table. Il suo meccanismo come per la cache si basa sul *principio di località*
+
+## Segmentazione
+> La memoria associata al processo è suddivisa in aree differenti dal punto di vista funzionale
+
+Esempio
+- Aree text
+	- Contengono gli eseguibili
+	- Solo lettura
+	- Condivise
+- Aree dati
+	- Contengono i dati
+	- Condivise o non condivise
+- Aree stack
+	- Sia lettura che scrittura
+	- Non condivise
+
+La condivisione di codice e dati è permessa con la segmentazione, così che il codice possa non essere duplicato
+
+### Segmentazione vs Paginazione
+**Paginazione** | **Segmentazione**
+-: | :-
+Divisione in pagine automatica | Divisione in pagine dal programmatore
+Pagine a dimensione fissa | Segmenti a dimensione variabile
+Contengono sia codice che dati | Contenitori omogenei, gestione di accesso e permessi di condivisione migliori
+Una pagina ha un indirizzo | Un segmento ha un nome
+Dimensione tipica di pagina `1KB` - `4KB` | Dimensione tipica di un segmento `64KB` - molti `MB`
+
+Oggi si usa il metodo di paginazione combinato a quello della segmetazione, visto che quest'ultima ha problemi analoghi a quelli visti con le tecniche più basilari di gestione di memoria dinamica
+
+- Ogni segmento viene suddiviso in pagine che vengono allocate in frame liberi della memoria (anche non contigui)
+- La MMU deve supportare sia segmentazione che paginazione
+- Così abbiamo i benefici della segmentazione (condivisione e protezione) **+** benefici della paginazione (no frammentazione esterna)
+
+
+## Memoria virtuale
 
