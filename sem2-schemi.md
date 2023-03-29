@@ -1116,6 +1116,197 @@ Oggi si usa il metodo di paginazione combinato a quello della segmetazione, vist
 - La MMU deve supportare sia segmentazione che paginazione
 - Così abbiamo i benefici della segmentazione (condivisione e protezione) **+** benefici della paginazione (no frammentazione esterna)
 
-
 ## Memoria virtuale
+> Tecnica che permette l'esecuzione di processi non completamente in memoria
+
+Permette di eseguire in concorrenza processi che nel loro complesso hanno bisogno di molta memoria
+
+### Implementazione
+Ogni processo ha accesso ad uno **spazio di indirizzamento virtuale**, che può essere più grande di quello fisico
+
+Gli indirizzi virtuali possono essere in memoria principale o secondaria, se vengono richiesti dati con indirizzi fisici in memoria secondaria vengono trasferiti in memoria principale, se la memoria è piena si sposta in memoria secondaria i dati che l'algoritmo di rimpiazzamento ci dice
+
+### Paginazione a richiesta (demand paging)
+Si utilizza la paginazione, considerando che potrebbero stare in memoria secondaria. Nella page table allora ci sarà un bit per indicare se la pagina è presente in memoria centrale o meno
+
+Quando un processo fa accesso ad una pagina non in memoria
+- La CPU genera una trap (*page fault*)
+- Il SO (in particolare il *pager*) si occupa del caricamento della pagina in memoria
+
+![Esempio](img-schemi/memVirtEs.png)
+
+### Pager/Swapper
+> L'azione di copiare l'intera area di memoria usata da un processo
+
+Tecnica utilizzata in passato quando non esisteva *demand paging*
+
+Utilizziamo ancora il termine *swap area* per indicare l'area del disco utilizzata per ospitare le pagine in memoria secondaria
+
+### Gestione dei page fault
+1. La MMU scopre che la pagina 1 non è in memoria principale
+2. Viene generata una trap *page fault*, che viene catturata dal SO
+3. Il SO cerca in memoria secondaria la pagina da caricare
+4. Il SO carica in memoria principale il contenuto della pagina
+5. Il SO aggiorna la *page table* in modo opportuno e riavvia l'esecuzione
+
+![Gestione Page Fault](img-schemi/gestPF.png)
+
+Se mancano frame liberi allora se ne libera uno, scegliendolo con un algoritmo di sostituzione/rimpiazzamento
+
+### Algoritmi di rimpiazzamento
+**Obbiettivo**: minimizzare il numero di page fault
+
+**Valutazione**: valutati esaminando come si comportano su una *stringa di riferimenti* in memoria (generate esaminando funzionamento di programmi reali)
+
+Ci si aspetta che con un numero di frame maggiore il numero di page fault decresca sempre, in realtà non è sempre così
+
+### Algoritmo FIFO
+Semplice da implementare, viene eliminato il frame che è stato caricato da più tempo in memoria
+
+Lo svantaggio principale è che se una pagina viene usata sempre è scaricata sempre
+
+#### Anomalia di Belady
+In alcuni algoritmi di rimpiazzamento non è detto che aumentando il numero di frame il numero di page fault diminuisca
+
+Questo fenomeno si chiama **Anatomia di Belady**
+
+### Algoritmo MIN (ottimale)
+> Seleziona come pagina vittima una pagina che non sarà più acceduta o la pagina che verrà acceduta nel futuro più lontano
+
+Algoritmo teorico, possiamo solo fare un'euristica basandoci sulle esecuzioni precedenti dei processi
+
+### Algoritmo LRU (least recently used)
+> Seleziona come pagina vittima la pagina che è stata usata meno recentemente in passato
+
+Stima la distanza nel futuro utilizzando la distanza nel passato
+
+#### Implementazione
+Necessario uno specifico supporto HW come la MMU
+- Deve registrare nella tabella delle pagine un *time-stamp* di quando si accede ad una pagina
+- Il *time-stamp* può essere implementato come contatore che viene incrementato ad ogni accesso in memoria
+
+**Problemi**: Bisogna gestire l'overflow dei contatori, devono essere memorizzati (spazio "sprecato" e più accessi) e la tabella deve essere completamente scandita
+
+Si può implementare come *stack*: Tutte le volte che viene acceduta una pagina viere rimossa dallo stack e rimessa in cima
+
+Farlo tramite SW richiederebbe troppe risorse, esistono meccanismi HW per questo
+
+### Algoritmi a Stack
+> Un algoritmo è a Stack se l'insieme di pagine in memoria con `m` frame è sempre un sottoinsieme delle pagine in memoria con `m+1` frame per ogni stringa/tempo/ampiezza di memoria
+
+Un algoritmo a Stack non genera casi di *Anomalia di Belady*. L'algoritmo LRU è a Stack
+
+#### Implementazione di LRU
+In entrambi i casi (contatori e stack) LRU è troppo costoso, oggi spesso si usa FIFO
+
+Alcuni sistemi forniscono i *reference bit*, tutte le volte che la pagina è acceduta il bit associato ad essa viene aggiornato ad 1
+
+#### Approssimare LRU
+Possiamo usarli per LRU, avremo una approssimazione di LRU, ma sapremo chi è in memoria principale senza che abbia ricevuto un secondo accesso
+
+##### Additional Reference Bit Algorithm
+Possiamo salvare i reference bit ad intervalli regolari, e mantere gli ultimi `n` bit di "storia" per ogni pagina
+
+Il valore dei reference bit viene salvato tramite shift a destra della storia, e inserendo l'ultimo come bit più significativo. La pagina vittima è quella con valore minore della storia
+
+##### Second-chance Algorithm
+Corrisponde al caso particolare con dimensione della storia pari ad 1
+
+Pagine gestite come lista circolare, a partire dalla posizione successiva della pagina caricata, si scorre la lista:
+- Se la pagina è stata acceduta (RB a 1), il RB viene messo a 0
+- Se la pagina non è stata acceduta (RB a 0), la pagina selezionata è la vittima
+
+L'idea è che sia un algoritmo FIFO che dà due possibilità invece di una sola
+
+![Esempio Second chance](img-schemi/SCes.png)
+
+### Altri algoritmi di rimpiazzamento
+#### Least Frequently Used (LFU)
+Si mantiene un contatore con il numero di accessi ad una pagina. Così una pagina usata spesso non viene mai scartata
+
+Può essere implementato tramite *reference bit*
+
+Il problema principale è che ci potrebbe essere una pagina usata spesso all'inizio dell'esecuzione del processo che poi non viene più usata, e questo fa sì che venga mantenuta in memoria molto inutilmente
+
+### Allocazione
+Algoritmo di allocazione (per memoria virtuale): \
+Algoritmo usato per scegliere quanti frame assegnare ad ogni singolo processo
+
+- Allocazione locale
+	- Ogni processo ha un insieme proprio di frame
+	- Poco flessibile
+- Allocazione globale
+	- Tutti i processi possono allocare tutti i frame (sono in competizione)
+	- Può portare al **trashing**
+
+#### Trashing
+> Processo che spende più tempo per la paginazione che per l'esecuzione
+
+Si ha quando i processi tendono a "rubarsi i frame a vicenda"
+
+Se aumenta di molto il grado di *multiprogramming* sopra una certa soglia il **trashing** ammazza le prestazioni
+
+### Working Set
+> L'insieme delle pagine accedute nei più recenti riferimenti in una finestra $\Delta$
+
+È una rappresentazione approssimata del concetto di località. Se una pagina non commpare in $\Delta$ riferimenti successivi in memoria, allora esce dal working set, non è una pagina su cui si lavora attivamente
+
+Serve per capire quando il sistema è in trashing, se la somma dell'ampiezza di tutti i working set è maggiore del numero di frame disponibili il sistema è in trashing
+
+- $\Delta$ troppo piccolo: Falsi negativi di trashing
+- $\Delta$ troppo grandi: Falsi positivi di trashing
+
+Serve quindi per controllare l'allocazione dei frame ai singoli processi
+- Quando ci sono sufficienti frame disponibili non occupati dai working set dei processi attivi, allora si può attivare un nuovo processo
+- Se il contrario, allora il sistema è in trashing, quindi si può decidere di sospendere l'esecuzione di un processo per recuperare performance
+
+# Gestione I/O e Memoria secondaria
+## Dispositivi a Blocchi/Caratteri
+- Interfaccia di comunicazione a blocchi
+	- I dati vengono letti/scritti a blocchi
+	- L'accesso viene fornito tramite File System
+	- Accesso tramite *memory-mapped I/O*
+- Interfaccia di comunicazione a caratteri
+	- I dati vengono letti/scritti un carattere per volta
+	- **Bufferizzazione**
+
+## Tecniche di gesitone dei dispositivi di I/O
+- Buffering
+	- Serve per gestire la differenza di velocità tra produttore e consumatore di un flusso di dati
+	- Per gestire la differenza di dimensioni di unità di trasferimento
+	- Per implementare la *semantica di copia* delle operazioni di I/O
+- Caching
+	- Mantiene una copia in memoria primaria di informazioni che si trovano in memoria secondaria
+	- Rispetto al buffer in cache si mantiene una copia dell'informazione
+- Spool
+	- Buffer che mantiene output per un dispositivo che non può accettare flussi distinti (es. stampanti)
+
+## NAS (Network Attached Storage)
+- Unità che consentono un mount remoto
+- Memoria secondaria condivisa
+
+![NAS](img-schemi/nas.png)
+
+## SAN (Storage Area Network)
+> Sistema che permette di avere l'indirizzamento a diversi server per le varie richieste
+
+![SAN](img-schemi/san.png)
+
+## Memoria Secondaria
+### SSD (Solid State Disk)
+- No fragilità meccaniche
+- Meno energia richiesta
+- Numero massimo di cicli di scrittura
+- Velocità lettura > velocità scrittura
+- Si legge a blocchi, si scrive a *banchi* (insieme di blocchi)
+- Tempo di accesso uniforme su tutto lo spazio in memoria
+
+### Dischi meccanici
+Composto da un insieme di piatti, suddivisi in tracce, le quali sono divise in settori
+
+Tempo di accesso variabile a seconda della posizione sul disco dei dati
+
+**Ritardo rotazionale**: Tempo medio necessario affinchè il settore desiderato arrivi sotto la testina
+
+**Transfer time**: Dipende dalla quantità di dati da leggere, se non sono conigui i dati è molto peggio
 
