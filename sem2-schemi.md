@@ -1310,3 +1310,80 @@ Tempo di accesso variabile a seconda della posizione sul disco dei dati
 
 **Transfer time**: Dipende dalla quantità di dati da leggere, se non sono conigui i dati è molto peggio
 
+### Disk Scheduling
+La politica di scheduling (SW) per gestire i dischi
+
+#### First Come, First Served (FCFS/FIFO)
+- Politica di gestione fair
+- Non minimizza il numero di seek
+- Non genera starvation
+
+#### Shortest Seek Time First (SSTF)
+- Seleziona le richieste che richiedono meno spostamento della testina
+- **Genera starvation**
+
+#### LOOK (Algoritmo dell'ascensore)
+- La testina percorre la stessa direzione fino a quando non ci sono più richieste per quella direzione, allora si gira e riparte
+- Efficiente
+- Tempo medio di accesso al disco non omogeneo
+- Genera starvation solo in alcuni casi (se rimane sullo stesso cilindro per molto tempo)
+- Molto usato
+- Si privilegiano i cilindri centrali
+
+#### C-LOOK
+- Stesso principio di LOOK, ma un unica direzione per la testina
+- Quando si raggiunge l'ultima richiesta riparto dalla prima
+- Non si privilegiano i cilindri centrali, ma comunque possibile di starvation
+
+##### Risolvere la possibile starvation (LOOK e C-LOOK)
+Basta aggiungere le richieste nuove in una sottocoda, quando si finisce in un verso si scambiano le due code
+
+### RAID (Redundant Array of Independent Disks)
+Problema: La velocità dei processori cresce più velocemente di quella delle CPU
+
+Allora usiamo dei sistemi per mettere dei dischi in parallelo, facendoli vedere come disco unico
+
+Esistono 7 schemi che rappresentano diversi tipi di distribuzione di dati
+
+Caratteristiche comuni ai 7 schemi:
+- Un array di dischi è visto dal SO come unico disco logico
+- I dati sono distribuiti tra i vari dischi
+- La capacità ridondante permette di usare informazioni di parità, che permettono il recovery dei dati
+
+Questo sistema è utile se serve molto la velocità, come quando abbiamo bisogno di leggere grandi quantità di dati sequenziali o se abbiamo tante richieste indipendenti
+
+#### RAID 0 (striping)
+> I dati sono distribuiti su più disci
+
+- Non posside meccanismi di ridondanza
+- Le richieste possono essere servite in parallelo
+- I dati sono suddivisi in *strip*, e strip conseguitivi sono distribuiti su dischi diversi
+- La velocità può diventare $N$ volte più veloce, se abbiamo $N$ dischi
+
+#### RAID 1 (mirroring)
+> I dati sono salvati due volte
+
+- Copre solo un fallimento di un disco (di più solo se sono nella stessa copia)
+- Le richieste di lettura possono essere servite in parallelo
+- Il recovery è semplice, basta cambiarlo e il sistema ricostruisce il contenuto dall'altra copia ancora viva
+
+#### RAID 4
+> Si usa un meccanismo di striping, utilizzando uno strip di parità caricato sul *disco di parità*
+
+- Il disco di parità contiene i dati delle strip degli altri dischi facendo lo XOR tra i dati
+- Il collo di bottiglia è che il disco di parità deve ad ogni scrittura ricalcolare la partià
+- Si può rompere qualsiasi disco e posso ricostruirlo, minori costi rispetto al RAID 1
+
+#### RAID 5
+> Come RAID 4, ma i *blocchi di parità* sono distribuiti su tutti i dischi
+
+- Tutti i vantaggi del RAID 4 senza il collo di bottiglia del *disco* di parità
+- Recovery e ridondanza come RAID 4
+
+#### RAID 6
+> Come RAID 6, ma si usano due strip di partià diverse
+
+- A questo punto possiamo avere fino a due dischi rotti e riuscire comunque a recuperarli
+- La parità viene calcolata in due modi, la prima come in RAID 4, la seconda seguendo le strip in diagonale
+- Dopo viene usato lo stesso sistema di RAID 5 per risolvere il problema del collo di bottiglia
+
