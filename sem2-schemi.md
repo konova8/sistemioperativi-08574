@@ -1393,7 +1393,7 @@ Questo sistema è utile se serve molto la velocità, come quando abbiamo bisogno
 Il compito del **file system** è quello di astrarre la complessità di utilizzo dei diversi media proponendo un'interfaccia per i sistemi di memorizzazione
 
 Per l'utente esistono due elementi:
-- *file*: unita' logica di memorizzazione
+- *file*: unità logica di memorizzazione
 - *directory*: servono per organizzare e fornire informazioni sui file che compongono un file system
 
 ### Attributi dei file
@@ -1401,7 +1401,7 @@ Per l'utente esistono due elementi:
 - **Tipo**: In alcuni sistemi necessario
 - **Locazione e dimensione**: Informazioni sulla posizione del file in memoria secondaria
 - **Data e ora**: Informazioni su creazione e ultima modifica del file
-- **Proprieta'**: Utenti, gruppi, ecc. Utilizzato per autorizzazione
+- **Proprietà**: Utenti, gruppi, ecc. Utilizzato per autorizzazione
 - **Protezione**: Informazioni di accesso per esecuzione di operazioni su file
 - Altri come flag, (sistema, archivio, hidden, ecc), informazioni di locking, ecc.
 
@@ -1415,7 +1415,7 @@ A seconda del contenuto
   - Sorgente, oggetto, ecc
   - Eseguibile
 
-Conoscendo il tipo di file, il SO puo' evitare errori comuni
+Conoscendo il tipo di file, il SO può evitare errori comuni
 
 Le tre tecniche principali per identificare il tipo di file sono:
 - Estensioni del file
@@ -1431,7 +1431,7 @@ Nei sistemi UNIX sono presenti:
 - *file speciali a caratteri*: utilizzati per modellare device di I/O seriali come terminali
 - *altri file speciali*: ad esempio la **pipe**
 
-Gli ultimi tre in realta' non sono file
+Gli ultimi tre in realtà non sono file
 
 ### Struttura dei file
 Tre modi possibili:
@@ -1441,27 +1441,27 @@ Tre modi possibili:
 
 ![Strutture file system](img-schemi/structFS.png)
 
-Il supporto che viene fornito alla stuttura dei file e' un trade-off, con piu' formati il codice e' piu' ingombrante ma la gestione e' piu' efficente e non duplicata per i file speciali. Con meno formati il il sistema e' piu' snello
+Il supporto che viene fornito alla stuttura dei file è un trade-off, con più formati il codice è più ingombrante ma la gestione è più efficente e non duplicata per i file speciali. Con meno formati il il sistema è più snello
 
-I metodi di accesso possono essere diretti (usando la posizione) o indicizzati (usando una chiave a cui e' associata la posizione)
+I metodi di accesso possono essere diretti (usando la posizione) o indicizzati (usando una chiave a cui è associata la posizione)
 
 ### Directory
-L'organizzazione del file system e' basata sul concetto di directory, che fornisce un'astrazione per un'insieme di file
+L'organizzazione del file system è basata sul concetto di directory, che fornisce un'astrazione per un'insieme di file
 
 **Directory strutturata ad albero**
 ![Directory strutturata ad albero](img-schemi/dirAlb.png)
 
-E' possibile anche considerare grafi diversi dagli alberi, con un file condiviso in piu' directory
+È possibile anche considerare grafi diversi dagli alberi, con un file condiviso in più directory
 La struttura prende il nome di **Directory strutturata a grafo aciclico**
 ![Directory strutturata a DAG](img-schemi/dirDAG.png)
 
 ## Visione implementatore
 ### Organizzazione del disco
-Un disco puo' essere diviso in una o piu' partizioni, porzioni indipendenti del disco che possono ospitare file system distinti
+Un disco può essere diviso in una o più partizioni, porzioni indipendenti del disco che possono ospitare file system distinti
 
-Il primo settore dei dischi e' detto **Master Boot Record** (MBR), e contiene la partition table, al boot viene letto e viene decisa quale partizione fare partire
+Il primo settore dei dischi è detto **Master Boot Record** (MBR), e contiene la partition table, al boot viene letto e viene decisa quale partizione fare partire
 
-GPT e' un modo moderno che si usa al posto di MBR
+GPT è un modo moderno che si usa al posto di MBR
 
 Il MBR carica il *boot block* della partizione e lo esegue. Il boot block carica il SO e lo esegue
 
@@ -1485,7 +1485,7 @@ Ogni file costituito da una lista concatenata di blocchi e il descrittore del fi
 
 **Vantaggi**: Risolve il problema della frammentazione esterna, accesso sequenziale o in "append mode" efficente
 
-**Svantaggi**: Accesso diretto inefficiente, progressivamente l'efficienza del FS degrada, la dimensione del blocco non e' una potenza di 2, c'e' overhead per i puntatori per i blocchi piccoli
+**Svantaggi**: Accesso diretto inefficiente, progressivamente l'efficienza del FS degrada, la dimensione del blocco non è una potenza di 2, c'è overhead per i puntatori per i blocchi piccoli
 
 Per minimizzare l'overhead dei puntatori i blocchi vengono riuniti in cluster e allocati insieme
 
@@ -1496,25 +1496,25 @@ Crea una tabella unica con un elemento per blocco (o cluster) invece di avere il
 
 **Svantaggi**: Scansione richiede anche la lettura della FAT, aumentando il numero di accessi al disco
 
-Nota, possibile fare caching in memoria dei blocchi FAT, l'accesso diretto diventa cosi' piu' efficiente
+Nota, possibile fare caching in memoria dei blocchi FAT, l'accesso diretto diventa così più efficiente
 
 #### Allocazione indicizzata
-**Vantaggi**: Risolve il problema della frammentazione esterna, efficiente per accesso diretto e blocco indice caricato in memoria solo quando il file e' aperto
+**Vantaggi**: Risolve il problema della frammentazione esterna, efficiente per accesso diretto e blocco indice caricato in memoria solo quando il file è aperto
 
 **Svantaggi**: Dimensione del blocco indice determina l'ampiezza massima del file, inoltre utilizzare blocchi indici troppo grandi comporta un notgevole spreco di spazio
 
 ##### Possibili soluzioni
 **Concatenazione di blocchi indice**
 - L'ultimo elemento del blocco indice non punta al blocco dati ma al blocco successivo
-- Si ripropone pero' il problema per l'accesso diretto a file di grandi dimensioni
+- Si ripropone però il problema per l'accesso diretto a file di grandi dimensioni
 
 **Indice multilivello**
 - Si utilizza un blocco indice dei blocchi indice
 - Degradano le prestazioni, in quanto richiede un maggior numero di accessi
 
 **In UNIX**
-- Ogni file e' associato ad un index node
-- Un index node e' una struttura dati contenente gli attributi del file, e un indice di blocchi diretti e indiretti, secondo uno schema misto
+- Ogni file è associato ad un index node
+- Un index node è una struttura dati contenente gli attributi del file, e un indice di blocchi diretti e indiretti, secondo uno schema misto
 - Garantisce buone performance per accesso sequenziale
 - Ulteriori miglioramenti
   - Pre-caricamento
@@ -1524,28 +1524,28 @@ Nota, possibile fare caching in memoria dei blocchi FAT, l'accesso diretto diven
 #### Mappa di Bit
 > Ad ogni blocco corrisponde un bit in una bitmap, i blocchi libero sono associati ad un valore 0, i blocchi occupati ad un valore 1
 
-Lo svantaggio principale e' che memorizzare un vettore puo' richiedere molto spazio
+Lo svantaggio principale è che memorizzare un vettore può richiedere molto spazio
 
 ![Mappa di Bit](./img-schemi/mappaBit.png)
 
 #### Lista concatenata
 Si integra perfettamente per il metodo FAT
 
-L'allocazione di memorie di ampie dimensioni o contingue e' molto costoso
+L'allocazione di memorie di ampie dimensioni o contingue è molto costoso
 
 #### Lista concatenata (blocchi)
 Possibile usare una lista concatenata di blocchi contenenti puntatori a blocchi liberi
 
 **Vantaggi**
-- Ad ogni istante e' sufficiente mantenere in memoria solo un blocco contenente elementi liberi
-- Non e' necessario usare una struttura dati a parte
+- Ad ogni istante è sufficiente mantenere in memoria solo un blocco contenente elementi liberi
+- Non è necessario usare una struttura dati a parte
 
 **Svantaggi**
 - Allocaione di aree di ampie dimensioni o contigue molto costosa/difficoltosa
 
 ### Scelta della dimensione di un cluster
-- Cluster grandi hanno velocita' di lettura piu' alta, ma frammentazione interna elevata
-- Cluster piccoli hanno minore frammentazione, ma velocita' piu' bassa
+- Cluster grandi hanno velocità di lettura più alta, ma frammentazione interna elevata
+- Cluster piccoli hanno minore frammentazione, ma velocità più bassa
 
 ![Dati dimensione cluster](./img-schemi/dimensioneClusterDiff.png)
 
@@ -1555,7 +1555,7 @@ Possibile usare una lista concatenata di blocchi contenenti puntatori a blocchi 
 - Suddivisa in un certo numero di *directory entry*
 - Ogni *directory entry* deve permettere di accedere a nome, attributi e informazioni di allocazione
 
-Varie possibilita'
+Varie possibilità
 - Attributi contenuti nelle directory entry vs nell'*i-node*
 - lista lineare (array) vs hash table
 
@@ -1565,9 +1565,9 @@ Varie possibilita'
   - Le informazioni sono contenute negli i-node, una directory entry contiene un indice di i-node
   - Usata in UNIX
 
-Possiamo salvare i nomi a lunghezza fissa, meccanismo semplice ma si spreca spazio se grande, se piccolo e' limitante
+Possiamo salvare i nomi a lunghezza fissa, meccanismo semplice ma si spreca spazio se grande, se piccolo è limitante
 
-Altrimenti possiamo salvare i nomi a lunghezza variabile, piu' complesso
+Altrimenti possiamo salvare i nomi a lunghezza variabile, più complesso
 
 ![Lunghezza Fissa vs Variabile](./img-schemi/lunghezzaFissaVsVariabile.png)
 
@@ -1578,4 +1578,65 @@ Possiamo salvare le directory come lista lineare o come tabella hash
 - Tabella hash
   - Bisogna stabilire prima la dimensione della tabella a priori, e il metodo delle collisioni
   - Se le collisioni sono molte diventa inefficiente
+
+### Directory strutturata a grafo aciclico
+Due implementazioni possibili
+- Link simbolici
+- Hard link
+
+#### Link Simbolici
+Viene creato un tipo speciale di directory entry, che contiene un riferimento al file in questione
+
+Quando viene fatto riferimento al file:
+1. Si cerca nella directory
+2. Si scopre che si tratta di un link
+3. Viene **risolto** il link (ovvero si usa il cammino assoluto
+
+#### Hard Link
+Le informazioni relative al file sono presenti (identiche) in entrambe le directory
+
+Non è poi possibile distinguere la copia dall'originale
+
+La struttura a DAG è più flessibile di una struttura ad albero, ma si porta dietro diversi problemi
+
+Per implementare gli hard link abbiamo bisogno degli i-node, che devono contenere un contatore di riferimenti
+
+![Hard Link Implementazione](img-schemi/hardLinkImpl.png)
+
+### Tecniche per migliorare le performance dei FS
+- Memoria centrale
+	- Cache dei blocchi recentemente usati
+	- Tabella dei descrittori dei file aperti
+	- Buffer di blocco per DMA
+- Controller
+	- Buffer di traccia
+
+### Coerenza
+I meccanismi di caching possono causare inconsistenze nel FS
+
+Due possibili soluzioni:
+- **Curare** (*file system checker*): `fsck`, `scandisk`
+- **Prevenire** (*journaling system checker*): `ext3`, `reisenrfs`
+
+#### Controlli di coerenza: `fsck`
+1. **Check block and sizes**
+	- Controlla le incoerenze degli i-node
+2. **Check path-names, check directory**
+	- Controlla dir, devono puntare a i-node legali
+3. **Check connectivity**
+	- Controlla che tutti i file siano ancora raggiungibili
+	- Se trova i-node validi che non sono collegati li mette nella cartella *lost+found*
+4. **Check reference counts**
+	- Verifica il numero di riferimenti ad ogni file
+5. **Check Cylinder group**
+	- Verifica i-node e blocchi liberi-occupati
+6. **Salvage Cylinder groups**
+	- Aggiorna tabella per salvare cambiamenti
+
+#### Prevenzione (log)
+Ogni aggiornamento al FS è trattato come una **transizione**, operazione che viene eseguita in modo atomico
+
+È simile a come funziona su git, e periodicamente viene fatto un push (strascrizione da log a FS)
+
+In caso di errore di qualche tipo si ripercorrono le modifiche fatte seguendo i log
 
