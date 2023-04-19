@@ -1640,3 +1640,237 @@ Ogni aggiornamento al FS è trattato come una **transizione**, operazione che vi
 
 In caso di errore di qualche tipo si ripercorrono le modifiche fatte seguendo i log
 
+# Sicurezza
+## Introduzione
+### Definizioni
+#### Protezione e sicurezza
+- **Sicurezza**
+	- È il problema generale, che coinvolge non solo il sistema informatico, ma anche di aspetti amministrativi ecc
+- **Trust**
+	- È la misura della *fiducia* sulla sicurezza di un sistema informatico
+- **Protezione**
+	- L'insieme dei *meccanismi* utilizzati per proteggere il sistema informatico
+
+#### Obbiettivi
+- Data confidentiality
+- Data integrity
+- System availability
+
+#### Sicurezza
+> Un sistema è sicuro se tutte le sue risorse sono accedute nei modi previsti e autorizzati
+
+Violazioni
+- *Disclosure*
+- *Alteration*
+- *Denial of service*
+
+#### Politiche e meccanismi
+Una *security policy* descrive i requisiti di sicurezza del sistema. I *meccanismi* implementano la security policy
+
+La scelta di una *security policy* dipende da
+- Tipo di attacchi attesi
+- Valore di informazioni contenute nel sistema
+- I costi
+
+### Crittografia
+La base ripassala da Reti
+
+Due possibilitè
+- *Security by obscurity*
+	- Sicurezza ottenuta mantenendo segreti algoritmi e chiavi
+- *Sicurezza basata su chiavi*
+	- Sicurezza ottenuta mantenendo segrete le chiavi e usarne di grandi (eviti bruteforce), l'algoritmo può essere pubblico
+
+### Attacchi
+#### Tipologie di attacco
+- *attivi* vs *passivi*
+	- Attivi = sulla macchina
+	- Passivi = non sulla macchina (spostando l'HDD)
+- *interni* vs *esterni*
+
+#### Elementi coinvolti
+- Librerie, tool di sistema
+	- Spesso e volentieri contengono tanto codice e vengono eseguiti da superutente
+	- Attacchi sia interni che esterni
+- Applicazioni
+	- Possono fornire una prima "testa di ponte" per attaccare un sistema
+- Utenti
+	- Anello più debole, tutta la sicurezza ruota intorno a loro
+
+#### Percorsi di attacco
+
+![Percorsi di attacco](img-schemi/percorsiAttacco.png)
+
+Esempio di attacco sulle slide tramite *trojan horse*
+
+### Vulnerabilità
+Possibili difetti del SW
+- Errori di programmazione
+	- Violazione di limiti (buffer overflow)
+	- Errori tempo controllo/utilizzo
+- Codice maligno
+	- Trojan horse
+	- Bombe logiche
+	- Backdoor
+	- Virus/Worm
+
+#### Buffer Overflow
+> Fornire ad un programma (server) un insieme di dati di dimensioni superiori a quella prevista
+
+Cosa succede?
+- Se va bene segmentation fault
+- Se va male l'attaccante fa code injection e prende il controllo della macchina
+
+##### Esempio
+```c
+int main()
+{
+	int buffer[10];
+	buffer[20] = 5;
+}
+```
+
+Il buffer viene creato nello stack, non vengono effettuati controlli sulla dimensione e la seconda istruzione scrive sullo stack
+
+Funzioni come `gets()`, `strcpy()` e `sprintf()` sono funzioni di libreria che non controllano la dimensione degli argomenti
+
+L'idea alla base è quella di riempire il buffer con codice maligno, e sovrascrivendo l'indirizzo di ritorno della funzione con un nuovo indirzzo che punta al codice maligno
+
+![Buffer Overflow Esempio](img-schemi/buffOver.png)
+
+##### Contromisure
+- Scrivere codice sicuro, evitando funzioni fallate
+- Invalidazione del codice nello stack
+	- In linux si utilizzano funzioni trampolino, ovvero lo stack parte da indirizzi diversi
+- Controlli a tempo di compilazione (tramite patch ai compilatori)
+- Controlli a run-time
+	- Verifiche a run-time delle dimensioni degli stack frame
+
+#### Errori di controllo/tempo di utilizzo
+- Fase 1
+	- A chiede a B di eseguire l'operazione `op` sul file `a.txt`
+	- B autorizza l'operazione in base alle informazioni di accesso
+- Fase 2
+	- A modifica il file da accedere nel periodo di tempo che intercorre tra controllo e utilizzo
+	- B effettua `op` su `b.txt`
+
+Per risolvere questo problema per fare `op` (un esempio è `open()` su file protetti) sul file viene cambiato temporaneamente utente, per non avere rischi di sicurezza
+
+### Codice "maligno"
+#### Trojan Horse
+> Programmi che replicano le funzionalità di programmi di uso comune o programmi dall'apparenza innocua ma che contengono codice "malefico"
+
+Catturano informazioni e mandano tutto al creatore del programma
+
+Esempi possono essere
+- Spyware
+- Inserire programmi accedibili tramite `$PATH` con nome simile (`la` al posto di `ls`) sperando che l'utente commetta un errore di battitura
+- Login spoofing
+
+#### Bombe logiche
+> Software che si attiva solo in particolari condizoni
+
+Esempio: Creatore del codice di un'azienda viene licenziato
+
+Contromisure: Code reviews
+
+#### Backdoor/Trapdoor
+> Il creatore di un SW può deliberatamente lasciare "porte di servizio" per aggirare i sistemi di protezione
+
+Contromisure: Code reviews
+
+#### Virus e Worm
+> Virus: Frammento di programma che può infettare altri programmi non maligni modificabili
+
+> Worm: Programma che diffonde copie di se stesso in una rete
+
+In realtà oggi sovrapponibili
+
+La sua attività si compone in
+- Riproduzione
+- Attivazione
+
+Possibili diffusioni del virus
+- Deve essere eseguito per potersi diffondere/attivare
+- Come può fare?
+	- Accodandosi ad un programma esistente
+	- Sfruttando un meccanismo di bootstrap
+	- Accodandosi a file dati che permettono l'esecuzione di codice (anche in maniera automatica
+
+Come individuarli?
+- I virus non sono invisibili
+- Possibile estrapolare la *firma* che li caratterizzano
+	- Viene sfruttata dagli anti-virus
+	- Il worm `code-red` inizia con `/default.ida?NNNNN`
+
+##### Internet Worm
+Il primo Worm conosciuto (1988, Morris)
+
+Voleva dimostrare che molti admin erano incompetenti
+
+Sfruttava alcuni bug nei sistemi di comunicazione
+
+## Autenticazione
+> Operazione di associare ad un utente un'identità
+
+Alla base di tutti i meccanismi di protezione
+
+Qualcosa che l'utente *conosce*/*ha*/*è*
+
+### Password
+Metodo più usato, ha diversi problemi (indovinare o carpire)
+
+#### Memorizzazione
+Nei sistemi obsoleti le password venivano salvate in chiaro
+
+Per password codificate si usa una funzione one-way
+
+Quando viene effettuato il login si fa il controllo se è uguale a quella salvata (cifrata)
+
+In UNIX il password file è `/etc/passwd`, che non contiene la password ma tutte le informazioni di contorno (la password è in `shadow`)
+
+Per attaccare lo schema precedente (cracking) si usa un dizionario di password comuni, e si cerca direttamente la codifica, se la password è nel mio dizionario la indovino al primo colpo
+
+Utilizzo di **salt**, aggiungo un numero casuale alla fine della password (salvato in chiaro) così il dizionario deve essere molto più grande (se numero casuale da 0 a 100 il dizionario deve essere grande 100 volte)
+
+#### Attacchi
+##### Login Spoofing
+- L'attaccante scrive un programma che presenta una finta schermata di login
+- L'utente digita la password
+- Il programma memorizza la password dicendo che era sbagliata
+- Torna a dare la schermata di login vera
+- L'utente non si è accorto di nulla ma il programma si è salvato la password
+
+##### Packet sniffing
+- Un packet sniffer è un software che analizza il traffico di rete
+- Cerca di individuare pacchetti contenenti coppie login/password spediti "in chiaro" da meccanismi di comunicazione come telnet e ftp
+- Memorizza le coppie login/password per uso futuro
+
+#### Challange/Response
+- Basato su funzioni one-way
+- Password (chiave) nota all'utente e al sistema a cui si vuole accedere
+- Il sistema propone una challenge, ovvero un valore numerico
+- Sia il sistema che l'utente calcolano la funzione `f(c, k)`
+- L'utente comunica al sistema il valore, se è uguale accede
+
+Usato per carte di credito, rende inservibili i packet sniffer
+
+#### One shot
+L'utente usa una password diversa ad ogni accesso
+
+Elenco di password utilizzabili, oppure si usa una TOTP, un codice che viene generato ed ha validità per poco tempo
+
+### Metodi alternativi
+- Autenticazione tramite oggetti fisici
+	- Tessera bancomat
+	- Facile da copiare
+- Smart Card
+	- Difficili da copiare
+	- Permettono di usare challenge e response
+- Autenticazione biometrica
+	- Impronte digitali, retina, voce
+
+## Controllo dell'accesso
+### Protezione del sistema operativo
+### Autorizzazione
+
