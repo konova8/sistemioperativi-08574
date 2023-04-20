@@ -1870,7 +1870,153 @@ Elenco di password utilizzabili, oppure si usa una TOTP, un codice che viene gen
 - Autenticazione biometrica
 	- Impronte digitali, retina, voce
 
+### PAM (Pluggable Authentication Module)
+Oggi esistono delle librerie di autenticazione, con moduli caricabili
+
+PAM è un servzio di autenticazione basato su config file
+
+Le applicazioni che lo supportano usano chiamate API
+
+```
+/etc/pam.d/su
+
+%PAM-1.0
+auth		sufficient	pam_rootok.so
+auth		required	pam_unix2.so nullok
+account		required	pam_unix2.so
+password	required 	pam_pwcheck.so nullok
+password	required 	pam_unix2.so nullok use_first_pass use_authtok
+session		required 	pam_homecheck.so
+session		required 	pam_unix2.so debug # none or trace
+```
+- Primo campo: classe di operazione
+	- `auth`: autenticazione dell'utente
+	- `account`: modificare gli attributi di un account
+	- `password`: modificare la password
+	- `session`: debug e logging su syslog
+- I vari moduli di una classe formano uno stack per classe
+- I moduli vengono valutati in ordine
+- Secondo campo
+	- `sufficient`: se ritorna grant, risposta positiva, moduli successivi non considerati
+	- `requisite`: se ritorna deny, risposta negativa, moduli successivi non considerati
+	- `required`: deve ritornare grant, non interrompe i check successivi
+	- `optimal`: influisce sul risultato solo se 00e8  l'unico modulo presente
+
 ## Controllo dell'accesso
 ### Protezione del sistema operativo
+> Insieme di meccanismi che separano il *gestore* (kernel) dalle *risorse gestite* (processi, risorse)
+
+Realizzata tramite meccanismi HW
+- Mode bit, meccanismo degli interrupt
+- Protezione memoria e dischi
+
 ### Autorizzazione
+> Insieme di meccanismii e politiche con cui il SO decide se un *soggetto* h il permesso di eseguire una determinata *azione* su un *oggetto*
+
+Realizzato tramite meccanismi SW
+- Trusted Computing Base, Reference Monitor
+- Matrice di Accesso
+
+#### Principi fondamentali
+- Principio di **Accesso Mediato** (Reference monitor)
+	- Tutti gli accessi ad un oggetto devono essere controllati
+	- In pratica molti OS controllano i diritti all'apertura e non per le azioni successive
+- Principio di **Separazione dei Privilegi**
+	- Un sistema non dovrebbe concedere permessi in base ad una singola condizione
+	- UNIX permette ad un utente di diventare root se conosce la password di root e fa parte del gruppo *wheel*
+- Principio di **Failsafe Default**
+	- Nessun soggetto ha diritti di default
+- Principio di **Privilegio minimo** (Need to know)
+	- Ogni soggetto ha i soli diritti per quella fase dell'elaborazione
+	- In pratica molti sistemi non hanno la granularit00e0  di privilegi e permessi richiesti per implementare questo principio
+
+#### Definizioni
+**Soggetto**: Entit00e0  attive che eseguono azioni
+
+**Oggetto**: Entit00e0  (passive/attive) su cui vengono eseguite azioni (soggetti $\subseteq$ oggetti)
+
+Insieme dei **diritti di accesso**: Insieme di azioni che possono essere eseguite
+
+UNIX
+- Soggetti = processi, thread
+- Oggetti = file, dispositivi, processi
+- Diritti di accesso = read, write, execute
+
+#### Dominio
+**Dominio di protezione**: Insieme di coppie `<oggetto, dirtti di accesso>`
+
+Ogni utente opera all'interno di un dominio di protezione, in UNIX *user-id* e *group-id*
+
+#### Matrice di accesso
+- Una matrice di domini/oggetti
+- L'elemento `A_(i, j)` contiene i diritti che il dominio `D_i` prevede per l'oggetto `O_j`
+- Quando viene creato un nuovo oggetto si aggiunge una colonna  alla matrice, il contenuto della colonna 00e8  deciso al momento della creazione
+
+L'associazione soggetto/dominio pu00f2  essere *statica* o *dinamica*
+
+##### Implementazione
+- **Access control list** (ACL)
+	- Ad ogni oggetto viene associata una lista di elementi `<dominio, diritti di accesso>`
+	- Una possibile ottimizzazione 00e8  quella di associare i diritti a insieme di domini, in UNIX ho liste di	3 elementi (owning user, owning group, others)
+- **Capability**
+	- Ad ogni dominio viene associata una lista di *capability*, ovvero `<oggetti, diritti di accesso>`
+	- Per controllare l'accesso i processi presentano le *capability* come credenziali per accedere all'oggetto, sono una sorta di chiave
+	- Perch00e8  funzioni non devono poter essere "coniate" le capability
+		- Possiamo mantenerle nello spazio kernel o nellos spazio utente
+
+#### Revoca dei dirtti di accesso
+Pu00f2  essere:
+- Immediata o Ritardata, subito o pu00f2  attendere
+- Selettiva o Generale, per alcuni domini o per tutti
+- Parziale o Totale, tutti i diritti o solo alcuni
+- Temporanea o Permanente
+
+- Con ACL 00e8  sufficiente aggiornare le strutture dati dei diritti di accesso
+- Con Capability l'informazione 00e8  memorizzata nei processi, come fare?
+	- Capability a validit00e0  temporale limitata
+	- Doppia memorizzazione (controllo ogni capability prima dell'utilizzo)
+	- Capability indirette
+	- Cambiamento dell'identit00e0  dell'oggetto
+
+### Modello tradizionale UNIX
+Ogni processo possiede almeno 6 ID associate ad esso
+- **real user ID, real group ID**
+	- Identificano il vero utente e gruppo che esegue il processo, sono presi dalla entry del file `passwd`
+	- Non cambiano durante la vita del processo
+- **effective user ID, effective group ID, supplementary group ID**
+	- Sono quelle effettivamente utilizzate per diritti di accesso al FS
+	- Normalmente ugualii a real, ma in alcuni casi diverso (quando cambi password con `$ passwd`
+- **saved set-user-ID e saved set-group-ID**
+	- Contengono copie delle effective inizializzate con la SYSCALL `setuid`
+
+Alcuni dettagli
+- Per apriire un file per nome
+	- Necessario exec su tutte le directory che fanno parte del path
+- Per creare un file in una directory
+	- Necessari diritti di exec e write nella directory
+- Per cancellare un file in una directory
+	- Necessari diritti di exec e write nella directory, non sul file
+
+#### Sticky bit
+> *Saved text mode*, impedisce ad un utente di cancellare file che non gli appartengono, nonostante abbia i diritti di scrittura nella directory (es. `/tmp`)
+
+#### Algoritmo per accesso aii file
+```python
+if effective uid == 0 (root)
+	access allowed
+else if effective uid == owner && appropriate user permission
+	access allowed
+else if group owner in (supplementary gids + {effective gid}) && appropriate group permission
+	access allowed
+else if appropriate other permission
+	access allowed
+else
+	access denied
+```
+
+#### `umask`, maschera usata per la creazione dei file
+`umask 046` rende tutti i bit segnati accesi nella maschera, e quando viene creato un nuovo file viene creato con gli accessi non accesi nella maschera
+
+### POSIX
+Parte sulle slide, da pagina 93 in poi
 
