@@ -1,0 +1,5 @@
+totale 28
+-rwxrwxr-x 1 andrea andrea 16424 set 11 19:49 neverm
+-rw-rw-r-- 1 andrea andrea  1064 set 11 19:49 notify.c
+drwxrwxr-x 2 andrea andrea  4096 set 11 19:49 prova
+-rw-rw-r-- 1 andrea andrea     0 set 11 19:49 test.txt
