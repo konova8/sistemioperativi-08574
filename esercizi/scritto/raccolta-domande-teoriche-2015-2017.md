@@ -95,7 +95,7 @@ operativi?
 	- La condizione sufficiente e' quella che ci sia un KNOT, ovvero un sottoinsieme di nodi da cui se si parte da uno si arriva a tutti e solo gli altri del KNOT
 	- Il ciclo non e' condizione sufficiente, perche' se ho un ciclo ma un processo all'interno puo' terminare allora il ciclo si "risolve"
 
-2018/06/21
+# 2018/06/21
 1. A cosa serve e quando viene eseguito l'algoritmo di calcolo del working set?
 	- L'algoritmo del working set calcola una approssimazione delle pagine più "utili" ai processi e che quindi durante l'esecuzione dell'algoritmo di gestione del page fault non dovranno essere sostituite per evitare trashing.
 
@@ -111,7 +111,6 @@ operativi?
 
 4. In quali casi la ready queue di uno scheduler può essere vuota? Sono casi fisiologici o patologici della vita di un sistema?
 	- Quando tutti i processi stanno facendo I/O ed è fisiologico.
-
 
 # 2018/05/28
 1. A cosa serve e quando viene eseguito un algoritmo di rimpiazzamento?
