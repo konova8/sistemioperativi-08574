@@ -11,65 +11,63 @@ Spiegare come funziona il file system di tipo ext2 e mostrare il contenuto di tu
 
 ## Esercizio g.2: 
 1). Usando un file system con journaling anche se un sistema viene spento senza fare la procedura di shutdown non si perdono dati.
-    - FALSO: IL journaling È UN SISTEMA PER CONTROLLARE LA COERENZA NEI FILE MA NON PER RECUPERARE O PROTEGGERE I DATI.
+    - Falso, il journaling È UN SISTEMA PER CONTROLLARE LA COERENZA NEI FILE MA NON PER RECUPERARE O PROTEGGERE I DATI.
 
-2)La crittografia a chiave pubblica (doppia chiave) puo’ essere usata al posto di quella a singola chiave e quindi quest’ultima sta cadendo in disuso.
-    - NO!!!
+2) La crittografia a chiave pubblica (doppia chiave) puo’ essere usata al posto di quella a singola chiave e quindi quest’ultima sta cadendo in disuso.
+    - Falso, la crittografia a chiave pubblica e' molto piu' costosa di quella a chiave singola, quindi solitamente viene usata solo in alcuni casi
 
-3)Gli scheduler a priorita’ sono particolarmente indicati per i programmi interattivi
-    - Sono particolarmente indicati perchè sono scheduler che cambiano dinamicamente in base agli input ricevuti a livello utente 
+3) Gli scheduler a priorita’ sono particolarmente indicati per i programmi interattivi
+    - Vero, sono particolarmente indicati perchè sono scheduler che cambiano dinamicamente in base agli input ricevuti a livello utente, se assegnamo una priorita' piu' alta ai processi interattivi il sistema sembrera' avere meno latenza
 
 4) Il problema del deadlock puo’ essere risolto con tecniche di checkpointing & rollback.
-    - vero, nel caso si entri in deadlock tramite la tecnica di checkpointing, ovvero il salvataggio dello stato dei processi, e di roolback, azione di ripristinare i processi al loro precedente stato finche non è più presente deadlock, si può risolvere lo stato di stallo.
+    - Vero, nel caso si entri in deadlock tramite la tecnica di checkpointing, ovvero il salvataggio dello stato dei processi, e di roolback, azione di ripristinare i processi al loro precedente stato finche non è più presente deadlock, si può risolvere lo stato di stallo.
 
-5)Deadlock prevention e avoidance sono la stessa cosa.
-    - Falso, prevention consiste nel eliminare uno dei 4 casi che causano deadlock, avoidance è l'attribuzione di risorse in stato SAFE nel quale abbiamo la certezza che in futuro non possa avvenire deadlock.
+5) Deadlock prevention e avoidance sono la stessa cosa.
+    - Falso, prevention consiste nell'eliminare uno dei 4 casi che causano deadlock strutturalmente, ma cio' pone dei limiti alla multiprocessabilita', avoidance invece è l'attribuzione di risorse in stato SAFE nel quale abbiamo la certezza che in futuro non possa avvenire deadlock (Vedi algoritmo del banchiere).
 
 # 2017/06/19
 ## g.2
 1) perché aumentando la dimensione dell’area di memoria secondaria usata dalla memoria virtuale si corre rischio di trashing?
-    - ???
+    - Piu' e' grande il frame buffer piu' abbiamo il rischio che ci siano processi attivi che tendono a rubarsi le pagine a vicenda
 
 2) cosa provoca la scelta errata della durata del quanto di tempo in uno scheduler round robin?
-    - Se il quanto di tempo è troppo piccolo il sistema risulta inefficiente perchè c'è un continuo scambio di processi, se troppo grande il sistema avrà la CPU in idle molto tempo e spesso.
+    - Se il quanto di tempo è troppo piccolo il sistema risulta inefficiente perchè c'è un continuo scambio di processi, se troppo grande il sistema non avra' la reattivita' voluta
+    - Infatti solitamente lo scheduler Round Robin viene usato lasciando una priorita' piu' alta ai processi piu' interattivi
 
 # 2017/05/29
 2) Perché è necessario usare spinlock in sistemi multiprocessore per implementare kernel di tipo simmetrico (SMP)?
     - perchè è necessario un sistema di sincronizzazione tra i processori che gestica gli accessi alle aree di memoria in comune.
 
-3) Perché nei sistemi reali l’algoritmo di rimpiazzamento second chance (orologio) viene preferito a LRU sebbene il primo non sia a
-stack e il secondo sì?
+3) Perché nei sistemi reali l’algoritmo di rimpiazzamento second chance (orologio) viene preferito a LRU sebbene il primo non sia a stack e il secondo sì?
     - second chance è un'approssimazione di LRU in quanto quest'ultimo non è possibile usarlo a causa dell'alto consumo hardware dovuto al continuo aggiornamento del counter, mentre second chance è un'implementazione che va a verificare se la pagina è già stata acceduta e quindi ha il reference bit a 1 oppure a 0 e in quest'ultimo caso viene scelta questa come vittima.
 
 4) Perché revocare un’autorizzazione espressa come capability è più difficile che revocare lo stesso diritto quando espresso come access control list?
-    - Perchè il sistema di autenticazione con ACL è un sistema che si può definire "centralizzato", poichè il sistema operativo deve controllare ogni volta se il richiedente ha i permessi di utilizzo di un oggetto, mentre con le capability anche solo il fatto che il richiedente possiede la capability dell'oggetto permette al programma di utilizzare l'oggetto riferito in conformità con i permessi specificati dalla capability.
-
+    - Perchè il sistema di autenticazione con ACL è un sistema che si può definire "centralizzato", poichè il sistema operativo deve controllare ogni volta se il richiedente ha i permessi di utilizzo di un oggetto, mentre con le capability le autorizzazioni sono in mano al processo stesso, quindi la revoca puo' avvenire in vari modi (come assegnare un timer alla capability, che poi dovra' tornare a chiedere l'autorizzazione al kernel)
 
 # 2016/05/30
-
 1) A cosa serve il processo IDLE (che mette il processore in wait state se possibile o esegue un loop infinito)? Quando viene messo in esecuzione? Come si gestisce l’attivazione di IDLE negli scheduler a priorità e nel round-robin?
     - Quando non vi sono presenti processi schedulati nel processore viene inserito il processo IDLE che mette il processore in wait state.
     - Negli scheduler a priorità e a round-robin se non sono preseti processi in ready queue che aspettano di essere consegnati alla cpu oppure quando aspettano di entrare in I/O, se la cpu è libera viene inserito il processo IDLE
 
 2) Lo stato unsafe è condizione necessaria ma non sufficiente perché possa verificarsi deadlock. Quali sono I passi logici necessari per dimostrare questa affermazione?
-    - perchè non è sicuro che anche se lo stato è unsafe venga causato deadlock, il deadlock viene causato solamente quando si presentano: mutua esclusione, attesa circolare, preemption, accumulo incrementale nello stesso istante.
-    - Prendendo come esempio l'algoritmo del banchiere, noi possiamo fare una predizione su l'andamento dei processi, in base alle richieste che fanno sulle risorse, ma andando incontro al deadlock il processore può adottare delle politiche per evitarlo.
-
+    - Lo stato UNSAFE indica che se un processo dovesse richiedere al momento "sbagliato" le risorse questo potrebbe generare deadlock, ma non e' una situazione certa
+    - Con l'algoritmo del banchiere (deadlock avoidance) non eliminiamo strutturalmente il deadlock, ma nel caso all'assegnamento di una risorsa si passasse ad uno stato UNSAFE il processo viene messo in coda e attende che sia disponibile la risorsa in quantita' sufficiente per lasciare lo stato del sistema SAFE
 
 3. Quali metodi di allocazione per file system ammettono la creazione di file di grandezza arbitrario?
-    - ???
+    - Un'allocazione concatenata senza blocchi permette la creazione di file di grandezza arbitararia, se abbiamo bisogno dei blocchi possiamo usare anche un'allocazione a blocchi con lista concatenata
+    - Non possiamo usare sistemi come quello UNIX, dove i blocchi utilizzati per un file sono indicizzati, quindi la dimensione massima e' la grandezza del blocco che contiene l'elenco degli indici
 
 4. Perché per utilizzare le capability come strumento di autorizzazione è sufficiente usare un metodo crittografico a singola chiave?
-    - Perchè una volta utilizzata la chiave singola come mezzo di autenticazione, solo il processo avente la capability avrà la possibilità di interagire con l'oggetto tramite i permessi forniti dalla capability. (Da controllare)
+    - Perchè una volta utilizzata la chiave singola come mezzo di autenticazione, solo il processo avente la capability avrà la possibilità di interagire con l'oggetto tramite i permessi forniti dalla capability.
+    - TODO da controllare
 
 # 2018/09/19
-
 1. Perché per realizzare un servizio di memoria virtuale l'algoritmo di rimpiazzamento LRU è difficile da implementare?
     - Perchè l'algoritmo deve tenere traccia tramite un contatore temporale dell'ultima pagina acceduta, si implementa utilizzando uno stack di pagine, dove la pagina acceduta più recentemente è in cima e quella meno recentemente in basso.
     - I contatori devono essere memorizzati in memoria e questo richiede accessi addizionali alla memoria.
 
 2. In quali casi anche utilizzando file system con supporto di journaling si possono perdere informazioni?
-    - Nei casi in cui il processo sta scrivendo in memoria i dati e venga interrotto e non completi tutte le operazioni che sta eseguendo, un esempio classico può essere la caduta di tensione del sistema. Il journaling è un sistema di controllo della coerenza non evita l perdita di dati.
+    - Nei casi in cui il processo sta scrivendo in memoria i dati e venga interrotto e non completi tutte le operazioni che sta eseguendo, un esempio classico può essere la caduta di tensione del sistema. Il journaling è un sistema di controllo della coerenza non evita la perdita di dati.
 
 3. Perché il servizio di message passing asincrono e quello sincrono non hanno lo stesso potere espressivo?
     - Nel message passing sincrono il processo che esegue la ssend() non si blocca in attesa che il processo ricevente esegua la sreceive().
@@ -80,7 +78,6 @@ operativi?
     - Si, esistono. I processori a istruzioni privilegiate sono stati pensati come metodo di protezione, senza istruzioni privilegiate l'utente eseguendo codice può interagire direttamente con l'hardware del sistema, un errore nel codice può portare ad eventi catastrofici sull'hardware.
 
 # 2018/07/17
-
 1. In quali casi è bene non usare la memoria virtuale?
 	- In sistemi dove si un hardware molto limitato, infatti l'utilizzo della memoria virtuale ha molteplici vantaggi, ma a scapito delle prestazioni. Se prendiamo in esame un sistema embedded infatti le sue caratteristiche generalmente non sopportano la gestione della memoria virtuale, essendo stati progettati per eseguire operazioni dal "costo" contenuto.
 
@@ -95,7 +92,8 @@ operativi?
 	- Un RAID6 sarà più lento di un RAID0 però potrà proteggere il sistema dalla perdita di dati anche se avverrànno guasti di 2 differenti dischi(al massimo).
 
 4. Dimostrare che un ciclo in un grafo di Holt multirisorsa non è condizione sufficiente perché ci sia un deadlock.
-	- ???
+	- La condizione sufficiente e' quella che ci sia un KNOT, ovvero un sottoinsieme di nodi da cui se si parte da uno si arriva a tutti e solo gli altri del KNOT
+	- Il ciclo non e' condizione sufficiente, perche' se ho un ciclo ma un processo all'interno puo' terminare allora il ciclo si "risolve"
 
 2018/06/21
 1. A cosa serve e quando viene eseguito l'algoritmo di calcolo del working set?
